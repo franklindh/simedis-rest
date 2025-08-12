@@ -14,7 +14,6 @@ func ErrorResponse(c *gin.Context, statusCode int, message string, err error) {
 	c.JSON(statusCode, gin.H{
 		"status":  "error",
 		"message": message,
-		"data":    nil,
 	})
 }
 

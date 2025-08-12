@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -76,8 +77,8 @@ func (h *PetugasHandler) Create(c *gin.Context) {
 		return
 	}
 
-	if newPetugas.Username == "" || newPetugas.Name == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, "username and name are required fields", nil)
+	if err := utils.ValidatePetugas(newPetugas); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
@@ -103,4 +104,126 @@ func (h *PetugasHandler) Create(c *gin.Context) {
 
 	createdPetugas.Password = ""
 	utils.SuccessResponse(c, http.StatusCreated, createdPetugas, "data created successfully")
+}
+
+func (h *PetugasHandler) Update(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid id format", err)
+		return
+	}
+
+	var updatedPetugas model.Petugas
+	if err := c.ShouldBindJSON(&updatedPetugas); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid request body", err)
+		return
+	}
+
+	if err := utils.ValidatePetugas(updatedPetugas); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+
+	result, err := h.Repo.Update(id, updatedPetugas)
+	if err != nil {
+		if err == repository.ErrNotFound {
+			utils.ErrorResponse(c, http.StatusNotFound, "data not found", nil)
+			return
+		}
+
+		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
+			utils.ErrorResponse(c, http.StatusConflict, "username already exists", nil)
+			return
+		}
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to update data", err)
+		return
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, result, "data updated successfully")
+}
+
+func (h *PetugasHandler) Delete(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid id format", err)
+		return
+	}
+
+	err = h.Repo.Delete(id)
+	if err != nil {
+		if err == repository.ErrNotFound {
+			utils.ErrorResponse(c, http.StatusNotFound, "data not found", nil)
+			return
+		}
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to delete data", err)
+		return
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, nil, "data deleted successfully")
+}
+
+func (h *PetugasHandler) Login(c *gin.Context) {
+	var loginData struct {
+		Username string `json:"username" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&loginData); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "username and password are required", err)
+		return
+	}
+
+	// --- BAGIAN DEBUGGING ---
+	fmt.Println("==============================")
+	fmt.Println("LOGIN ATTEMPT")
+	fmt.Printf("Username Diterima: '%s'\n", loginData.Username)
+	fmt.Printf("Password Diterima: '%s'\n", loginData.Password)
+	// --- AKHIR DEBUGGING ---
+
+	user, err := h.Repo.GetByUsername(loginData.Username)
+	if err != nil {
+		// --- BAGIAN DEBUGGING ---
+		fmt.Println("DEBUG: Error dari GetByUsername:", err)
+		fmt.Println("==============================")
+		// --- AKHIR DEBUGGING ---
+		if err == repository.ErrNotFound {
+			utils.ErrorResponse(c, http.StatusUnauthorized, "invalid username or password", nil)
+			return
+		}
+		utils.ErrorResponse(c, http.StatusInternalServerError, "database error", err)
+		return
+	}
+
+	// --- BAGIAN DEBUGGING ---
+	fmt.Printf("DEBUG: User ditemukan di DB. Hash password dari DB: '%s'\n", user.Password)
+	// --- AKHIR DEBUGGING ---
+
+	err = utils.VerifyPassword(loginData.Password, user.Password)
+	if err != nil {
+		// --- BAGIAN DEBUGGING ---
+		fmt.Println("DEBUG: Error dari VerifyPassword:", err)
+		fmt.Println("==============================")
+		// --- AKHIR DEBUGGING ---
+		utils.ErrorResponse(c, http.StatusUnauthorized, "invalid username or password", nil)
+		return
+	}
+
+	fmt.Println("DEBUG: Verifikasi password BERHASIL!")
+	fmt.Println("==============================")
+
+	jwtSecret := []byte(h.Config.JWTSecret)
+
+	token, err := utils.SignToken(strconv.Itoa(user.ID), user.Username, user.Role, jwtSecret)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to generate token", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "login successful",
+		"token":   token,
+	})
 }

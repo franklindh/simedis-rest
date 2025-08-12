@@ -50,7 +50,7 @@ func VerifyPassword(password, encodedHash string) error {
 		return err
 	}
 
-	decodedHash, err := base64.RawStdEncoding.DecodeString(parts[1])
+	decodedHash, err := base64.StdEncoding.DecodeString(parts[1])
 	if err != nil {
 		return err
 	}

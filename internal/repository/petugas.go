@@ -128,6 +128,21 @@ func (r *PetugasRepository) GetByID(id int) (model.Petugas, error) {
 	return p, nil
 }
 
+func (r *PetugasRepository) GetByUsername(username string) (model.Petugas, error) {
+	query := `SELECT id_petugas, id_poli, username_petugas, nama_petugas, status, role, password FROM petugas WHERE username_petugas = $1 AND deleted_at IS NULL`
+
+	var p model.Petugas
+	err := r.DB.QueryRow(query, username).Scan(&p.ID, &p.PoliID, &p.Username, &p.Name, &p.Status, &p.Role, &p.Password)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return model.Petugas{}, ErrNotFound
+		}
+		return model.Petugas{}, err
+	}
+
+	return p, nil
+}
+
 func (r *PetugasRepository) Create(petugas model.Petugas) (model.Petugas, error) {
 	query := `
 		INSERT INTO petugas (id_poli, username_petugas, nama_petugas, status, role, password)
@@ -171,6 +186,7 @@ func (r *PetugasRepository) Delete(id int) error {
 	if err != nil {
 		return err
 	}
+
 	if rowsAffected == 0 {
 		return ErrNotFound
 	}

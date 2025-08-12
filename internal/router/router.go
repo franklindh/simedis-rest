@@ -1,10 +1,9 @@
 package router
 
 import (
-	"net/http"
-
 	"github.com/franklindh/simedis-api/internal/config"
 	"github.com/franklindh/simedis-api/internal/handler"
+	"github.com/franklindh/simedis-api/internal/middleware"
 	"github.com/franklindh/simedis-api/internal/repository"
 	"github.com/gin-gonic/gin"
 )
@@ -21,19 +20,16 @@ func New(app *config.Application) *gin.Engine {
 	petugasRepo := repository.NewPetugasRepository(db)
 	petugasHandler := handler.NewPetugasHandler(petugasRepo, cfg)
 
-	router.GET("/poli", poliHandler.GetAll)
-	router.GET("/poli/:id", poliHandler.GetByID)
-	router.POST("/poli", poliHandler.Create)
-	router.PUT("/poli/:id", poliHandler.Update)
-	router.DELETE("/poli/:id", poliHandler.Delete)
-
-	router.GET("/petugas", petugasHandler.GetAll)
-	router.GET("/petugas/:id", petugasHandler.GetByID)
+	// publc
+	router.POST("/login/petugas", petugasHandler.Login)
 	router.POST("/petugas", petugasHandler.Create)
 
-	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"message": "pong"})
-	})
+	authRoutes := router.Group("/")
+	authRoutes.Use(middleware.AuthMiddleware(cfg))
+	{
+		PoliRoutes(authRoutes, poliHandler)
+		PetugasRoutes(authRoutes, petugasHandler)
+	}
 
 	return router
 }

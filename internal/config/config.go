@@ -14,6 +14,7 @@ type Config struct {
 	Port                   string
 	DSN                    string
 	DefaultPetugasPassword string
+	JWTSecret              string
 }
 
 type Application struct {
@@ -34,5 +35,5 @@ func Load() (*Config, error) {
 
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"), os.Getenv("DB_SSLMODE"))
 
-	return &Config{Port: os.Getenv("API_PORT"), DSN: dsn, DefaultPetugasPassword: os.Getenv("DEFAULT_PETUGAS_PASSWORD")}, nil
+	return &Config{Port: os.Getenv("API_PORT"), DSN: dsn, DefaultPetugasPassword: os.Getenv("DEFAULT_PETUGAS_PASSWORD"), JWTSecret: os.Getenv("JWT_SECRET")}, nil
 }
