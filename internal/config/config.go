@@ -1,13 +1,13 @@
 package config
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/joho/godotenv"
+	"gorm.io/gorm"
 )
 
 type Config struct {
@@ -19,7 +19,7 @@ type Config struct {
 
 type Application struct {
 	Config *Config
-	DB     *sql.DB
+	DB     *gorm.DB
 	Logger *log.Logger
 }
 

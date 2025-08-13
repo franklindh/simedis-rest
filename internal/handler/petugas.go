@@ -28,7 +28,7 @@ func (h *PetugasHandler) GetAll(c *gin.Context) {
 	sort := c.DefaultQuery("sort", "created_at_desc")
 	nameFilter := c.Query("name")
 
-	params := repository.ParamsGetAllParams{
+	params := repository.ParamsGetAllPetugas{
 		NameFilter: nameFilter,
 		SortBy:     sort,
 		Page:       page,

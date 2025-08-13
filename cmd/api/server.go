@@ -1,13 +1,14 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 	"os"
 
 	"github.com/franklindh/simedis-api/internal/config"
 	"github.com/franklindh/simedis-api/internal/router"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -19,19 +20,19 @@ func main() {
 		logger.Fatalf("could not load config: %v", err)
 	}
 
-	db, err := sql.Open("pgx", cfg.DSN)
+	db, err := gorm.Open(postgres.Open(cfg.DSN), &gorm.Config{})
 	if err != nil {
 
-		logger.Fatalf("could not open sql connection: %v", err)
+		logger.Fatalf("could not open gorm connection: %v", err)
 	}
 
-	defer db.Close()
-
-	err = db.Ping()
+	sqlDB, err := db.DB()
 	if err != nil {
+		logger.Fatalf("could not get underline sql.DB: %v", err)
+	}
+	if err = sqlDB.Ping(); err != nil {
 		logger.Fatalf("could not ping database: %v", err)
 	}
-
 	logger.Println("Database connection pool established")
 
 	app := &config.Application{

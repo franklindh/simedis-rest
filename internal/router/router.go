@@ -17,19 +17,24 @@ func New(app *config.Application) *gin.Engine {
 	poliRepo := repository.NewPoliRepository(db)
 	poliHandler := handler.NewPoliHandler(poliRepo)
 
-	petugasRepo := repository.NewPetugasRepository(db)
-	petugasHandler := handler.NewPetugasHandler(petugasRepo, cfg)
+	// petugasRepo := repository.NewPetugasRepository(db)
+	// petugasHandler := handler.NewPetugasHandler(petugasRepo, cfg)
+
+	// jadwalRepo := repository.NewJadwalRepository(db)
+	// jadwalHandler := handler.NewJadwalHandler(jadwalRepo)
 
 	// publc
-	router.POST("/login/petugas", petugasHandler.Login)
-	router.POST("/petugas", petugasHandler.Create)
+	// router.POST("/login/petugas", petugasHandler.Login)
+	// router.POST("/petugas", petugasHandler.Create)
 
 	authRoutes := router.Group("/")
 	authRoutes.Use(middleware.AuthMiddleware(cfg))
 	{
-		PoliRoutes(authRoutes, poliHandler)
-		PetugasRoutes(authRoutes, petugasHandler)
+
+		// PetugasRoutes(authRoutes, petugasHandler)
+		// JadwalRoutes(authRoutes, jadwalHandler)
 	}
+	PoliRoutes(nil, poliHandler)
 
 	return router
 }
