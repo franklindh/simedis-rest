@@ -22,22 +22,63 @@ func NewPetugasHandler(repo *repository.PetugasRepository, cfg *config.Config) *
 	return &PetugasHandler{Repo: repo, Config: cfg}
 }
 
+func (h *PetugasHandler) Create(c *gin.Context) {
+	var newPetugas model.Petugas
+
+	if err := c.ShouldBindJSON(&newPetugas); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid request body", err)
+		return
+	}
+
+	if err := utils.ValidatePetugasUsername(newPetugas); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+
+	defaultPassword := h.Config.DefaultPetugasPassword
+
+	encodedHash, err := utils.HashPassword(defaultPassword)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to hash password", err)
+		return
+	}
+	newPetugas.Password = encodedHash
+
+	createdPetugas, err := h.Repo.Create(newPetugas)
+	if err != nil {
+		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
+			utils.ErrorResponse(c, http.StatusConflict, "data already exists", nil)
+			return
+		}
+
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to create data", err)
+		return
+	}
+
+	createdPetugas.Password = ""
+	utils.SuccessResponse(c, http.StatusCreated, createdPetugas, "data created successfully")
+}
+
 func (h *PetugasHandler) GetAll(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "5"))
 	sort := c.DefaultQuery("sort", "created_at_desc")
 	nameFilter := c.Query("name")
+	roleFilter := c.Query("role")
+	statusFilter := c.Query("status")
 
 	params := repository.ParamsGetAllPetugas{
-		NameFilter: nameFilter,
-		SortBy:     sort,
-		Page:       page,
-		PageSize:   pageSize,
+		NameFilter:   nameFilter,
+		RoleFilter:   roleFilter,
+		StatusFilter: statusFilter,
+		SortBy:       sort,
+		Page:         page,
+		PageSize:     pageSize,
 	}
 
 	allPetugas, metadata, err := h.Repo.GetAll(params)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve data", err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to retrieve data", err)
 		return
 	}
 
@@ -69,43 +110,6 @@ func (h *PetugasHandler) GetByID(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, petugas, "success")
 }
 
-func (h *PetugasHandler) Create(c *gin.Context) {
-	var newPetugas model.Petugas
-
-	if err := c.ShouldBindJSON(&newPetugas); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid request body", err)
-		return
-	}
-
-	if err := utils.ValidatePetugas(newPetugas); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, err.Error(), nil)
-		return
-	}
-
-	defaultPassword := h.Config.DefaultPetugasPassword
-
-	encodedHash, err := utils.HashPassword(defaultPassword)
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to hash password", err)
-		return
-	}
-	newPetugas.Password = encodedHash
-
-	createdPetugas, err := h.Repo.Create(newPetugas)
-	if err != nil {
-		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-			utils.ErrorResponse(c, http.StatusConflict, "username already exists", nil)
-			return
-		}
-
-		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to create data", err)
-		return
-	}
-
-	createdPetugas.Password = ""
-	utils.SuccessResponse(c, http.StatusCreated, createdPetugas, "data created successfully")
-}
-
 func (h *PetugasHandler) Update(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -120,7 +124,7 @@ func (h *PetugasHandler) Update(c *gin.Context) {
 		return
 	}
 
-	if err := utils.ValidatePetugas(updatedPetugas); err != nil {
+	if err := utils.ValidatePetugasUsername(updatedPetugas); err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, err.Error(), nil)
 		return
 	}

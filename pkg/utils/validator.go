@@ -7,7 +7,7 @@ import (
 	"github.com/franklindh/simedis-api/internal/model"
 )
 
-func ValidatePetugas(petugas model.Petugas) error {
+func ValidatePetugasUsername(petugas model.Petugas) error {
 	if petugas.Username == "" || petugas.Name == "" {
 		return errors.New("username and name are required fields")
 	}
