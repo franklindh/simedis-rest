@@ -26,7 +26,8 @@ func (h *PetugasHandler) Create(c *gin.Context) {
 	var newPetugas model.Petugas
 
 	if err := c.ShouldBindJSON(&newPetugas); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid request body", err)
+		errorMessage := utils.FormatValidationError(err)
+		utils.ErrorResponse(c, http.StatusBadRequest, errorMessage, err)
 		return
 	}
 
@@ -68,12 +69,12 @@ func (h *PetugasHandler) GetAll(c *gin.Context) {
 	statusFilter := c.Query("status")
 
 	params := repository.ParamsGetAllPetugas{
-		NameFilter:   nameFilter,
-		RoleFilter:   roleFilter,
-		StatusFilter: statusFilter,
-		SortBy:       sort,
-		Page:         page,
-		PageSize:     pageSize,
+		NameOrUsernameFilter: nameFilter,
+		RoleFilter:           roleFilter,
+		StatusFilter:         statusFilter,
+		SortBy:               sort,
+		Page:                 page,
+		PageSize:             pageSize,
 	}
 
 	allPetugas, metadata, err := h.Repo.GetAll(params)
@@ -120,7 +121,8 @@ func (h *PetugasHandler) Update(c *gin.Context) {
 
 	var updatedPetugas model.Petugas
 	if err := c.ShouldBindJSON(&updatedPetugas); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid request body", err)
+		errorMessage := utils.FormatValidationError(err)
+		utils.ErrorResponse(c, http.StatusBadRequest, errorMessage, err)
 		return
 	}
 
@@ -179,19 +181,8 @@ func (h *PetugasHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// --- BAGIAN DEBUGGING ---
-	fmt.Println("==============================")
-	fmt.Println("LOGIN ATTEMPT")
-	fmt.Printf("Username Diterima: '%s'\n", loginData.Username)
-	fmt.Printf("Password Diterima: '%s'\n", loginData.Password)
-	// --- AKHIR DEBUGGING ---
-
 	user, err := h.Repo.GetByUsername(loginData.Username)
 	if err != nil {
-		// --- BAGIAN DEBUGGING ---
-		fmt.Println("DEBUG: Error dari GetByUsername:", err)
-		fmt.Println("==============================")
-		// --- AKHIR DEBUGGING ---
 		if err == repository.ErrNotFound {
 			utils.ErrorResponse(c, http.StatusUnauthorized, "invalid username or password", nil)
 			return
@@ -200,16 +191,8 @@ func (h *PetugasHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// --- BAGIAN DEBUGGING ---
-	fmt.Printf("DEBUG: User ditemukan di DB. Hash password dari DB: '%s'\n", user.Password)
-	// --- AKHIR DEBUGGING ---
-
 	err = utils.VerifyPassword(loginData.Password, user.Password)
 	if err != nil {
-		// --- BAGIAN DEBUGGING ---
-		fmt.Println("DEBUG: Error dari VerifyPassword:", err)
-		fmt.Println("==============================")
-		// --- AKHIR DEBUGGING ---
 		utils.ErrorResponse(c, http.StatusUnauthorized, "invalid username or password", nil)
 		return
 	}

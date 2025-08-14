@@ -157,7 +157,7 @@ func (r *PoliRepository) FindByNameIncludingDeleted(name string) (model.Poli, er
 	// pake gorm
 	var poli model.Poli
 
-	result := r.DB.Unscoped().Where("name_poli = ?", name).First(&poli)
+	result := r.DB.Unscoped().Where("nama_poli = ?", name).First(&poli)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return model.Poli{}, sql.ErrNoRows

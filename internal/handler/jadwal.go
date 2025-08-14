@@ -23,7 +23,8 @@ func (h *JadwalHandler) Create(c *gin.Context) {
 	var newJadwal model.Jadwal
 
 	if err := c.ShouldBindJSON(&newJadwal); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid request body", err)
+		errorMessage := utils.FormatValidationError(err)
+		utils.ErrorResponse(c, http.StatusBadRequest, errorMessage, err)
 		return
 	}
 
@@ -128,7 +129,8 @@ func (h *JadwalHandler) Update(c *gin.Context) {
 
 	var updatedJadwal model.Jadwal
 	if err := c.ShouldBindJSON(&updatedJadwal); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid request body", err)
+		errorMessage := utils.FormatValidationError(err)
+		utils.ErrorResponse(c, http.StatusBadRequest, errorMessage, err)
 		return
 	}
 

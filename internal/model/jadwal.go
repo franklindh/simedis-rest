@@ -9,11 +9,11 @@ import (
 
 type Jadwal struct {
 	ID           int            `json:"id,omitempty" gorm:"primaryKey;column:id_jadwal"`
-	PetugasID    int            `json:"petugas_id" gorm:"column:id_petugas"`
-	PoliID       int            `json:"poli_id" gorm:"column:id_poli"`
-	Tanggal      string         `json:"tanggal" gorm:"column:tanggal_praktik"`
-	WaktuMulai   string         `json:"waktu_mulai" gorm:"column:waktu_mulai"`
-	WaktuSelesai string         `json:"waktu_selesai" gorm:"column:waktu_selesai"`
+	PetugasID    int            `json:"petugas_id" gorm:"column:id_petugas" binding:"required,gt=0"`
+	PoliID       int            `json:"poli_id" gorm:"column:id_poli" binding:"required,gt=0"`
+	Tanggal      string         `json:"tanggal" gorm:"column:tanggal_praktik" binding:"required,datetime=2006-01-02"`
+	WaktuMulai   string         `json:"waktu_mulai" gorm:"column:waktu_mulai" binding:"required"`
+	WaktuSelesai string         `json:"waktu_selesai" gorm:"column:waktu_selesai" binding:"required,gtfield=WaktuMulai"`
 	Keterangan   sql.NullString `json:"keterangan" gorm:"column:keterangan"`
 	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index;column:deleted_at"`
 	CreatedAt    time.Time      `json:"created_at" gorm:"column:created_at"`

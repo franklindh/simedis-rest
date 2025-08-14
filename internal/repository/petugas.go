@@ -9,12 +9,12 @@ import (
 )
 
 type ParamsGetAllPetugas struct {
-	NameFilter   string
-	RoleFilter   string
-	StatusFilter string
-	SortBy       string
-	Page         int
-	PageSize     int
+	NameOrUsernameFilter string
+	RoleFilter           string
+	StatusFilter         string
+	SortBy               string
+	Page                 int
+	PageSize             int
 }
 
 type PetugasRepository struct {
@@ -31,8 +31,8 @@ func (r *PetugasRepository) GetAll(params ParamsGetAllPetugas) ([]model.Petugas,
 
 	db := r.DB.Model(&model.Petugas{})
 
-	if params.NameFilter != "" {
-		searchQuery := "%" + params.NameFilter + "%"
+	if params.NameOrUsernameFilter != "" {
+		searchQuery := "%" + params.NameOrUsernameFilter + "%"
 		db = db.Where("nama_petugas ILIKE ? OR username_petugas ILIKE ?", searchQuery, searchQuery)
 	}
 	if params.RoleFilter != "" {

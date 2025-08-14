@@ -72,7 +72,6 @@ func (r *JadwalRepository) GetAll(params ParamsGetAllJadwal) ([]model.Jadwal, pa
 		return nil, pagination.Metadata{}, err
 	}
 	return jadwal, metadata, nil
-
 }
 
 func (r *JadwalRepository) GetByID(id int) (model.Jadwal, error) {

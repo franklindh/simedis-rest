@@ -20,45 +20,11 @@ func NewPoliHandler(repo *repository.PoliRepository) *PoliHandler {
 	return &PoliHandler{Repo: repo}
 }
 
-func (h *PoliHandler) GetAll(c *gin.Context) {
-	poli, err := h.Repo.GetAll()
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "failed to retrieve data", err)
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"count":  len(poli),
-		"data":   poli,
-	})
-}
-
-func (h *PoliHandler) GetByID(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid id format", err)
-		return
-	}
-
-	poli, err := h.Repo.GetByID(id)
-	if err != nil {
-		if err == repository.ErrNotFound {
-			utils.ErrorResponse(c, http.StatusNotFound, "data not found", nil)
-			return
-		}
-		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to retrieve data", err)
-		return
-	}
-
-	utils.SuccessResponse(c, http.StatusOK, poli, "success")
-}
-
 func (h *PoliHandler) Create(c *gin.Context) {
 	var newPoli model.Poli
 	if err := c.ShouldBindJSON(&newPoli); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid request body", err)
+		errMessage := utils.FormatValidationError(err)
+		utils.ErrorResponse(c, http.StatusBadRequest, errMessage, err)
 		return
 	}
 
@@ -93,6 +59,41 @@ func (h *PoliHandler) Create(c *gin.Context) {
 		utils.SuccessResponse(c, http.StatusCreated, createdPoli, "data created successfully")
 		return
 	}
+}
+
+func (h *PoliHandler) GetAll(c *gin.Context) {
+	poli, err := h.Repo.GetAll()
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "failed to retrieve data", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"count":  len(poli),
+		"data":   poli,
+	})
+}
+
+func (h *PoliHandler) GetByID(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid id format", err)
+		return
+	}
+
+	poli, err := h.Repo.GetByID(id)
+	if err != nil {
+		if err == repository.ErrNotFound {
+			utils.ErrorResponse(c, http.StatusNotFound, "data not found", nil)
+			return
+		}
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to retrieve data", err)
+		return
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, poli, "success")
 }
 
 // func (h *PoliHandler) Update(c *gin.Context) {
@@ -136,7 +137,8 @@ func (h *PoliHandler) Update(c *gin.Context) {
 
 	var updatedPoli model.Poli
 	if err := c.ShouldBindJSON(&updatedPoli); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid request body", err)
+		errMessage := utils.FormatValidationError(err)
+		utils.ErrorResponse(c, http.StatusBadRequest, errMessage, err)
 		return
 	}
 
