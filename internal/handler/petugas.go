@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -196,9 +195,6 @@ func (h *PetugasHandler) Login(c *gin.Context) {
 		utils.ErrorResponse(c, http.StatusUnauthorized, "invalid username or password", nil)
 		return
 	}
-
-	fmt.Println("DEBUG: Verifikasi password BERHASIL!")
-	fmt.Println("==============================")
 
 	jwtSecret := []byte(h.Config.JWTSecret)
 

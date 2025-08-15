@@ -23,6 +23,9 @@ func New(app *config.Application) *gin.Engine {
 	jadwalRepo := repository.NewJadwalRepository(db)
 	jadwalHandler := handler.NewJadwalHandler(jadwalRepo)
 
+	pasienRepo := repository.NewPasienRepository(db)
+	pasienHandler := handler.NewPasienHandler(pasienRepo)
+
 	// publc
 	router.POST("/login/petugas", petugasHandler.Login)
 
@@ -32,6 +35,7 @@ func New(app *config.Application) *gin.Engine {
 		PoliRoutes(authRoutes, poliHandler)
 		PetugasRoutes(authRoutes, petugasHandler)
 		JadwalRoutes(authRoutes, jadwalHandler)
+		PasienRoutes(authRoutes, pasienHandler)
 	}
 
 	return router
