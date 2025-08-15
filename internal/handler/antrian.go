@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+
 	"strconv"
 
 	"github.com/franklindh/simedis-api/internal/model"
@@ -11,83 +12,84 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-type JadwalHandler struct {
-	Repo *repository.JadwalRepository
+type AntrianHandler struct {
+	Repo *repository.AntrianRepository
 }
 
-func NewJadwalHandler(repo *repository.JadwalRepository) *JadwalHandler {
-	return &JadwalHandler{Repo: repo}
+func NewAntrianHandler(repo *repository.AntrianRepository) *AntrianHandler {
+	return &AntrianHandler{Repo: repo}
 }
 
-func (h *JadwalHandler) Create(c *gin.Context) {
-	var newJadwal model.Jadwal
-
-	if err := c.ShouldBindJSON(&newJadwal); err != nil {
+func (h *AntrianHandler) Create(c *gin.Context) {
+	var input model.AntrianCreateInput
+	if err := c.ShouldBindJSON(&input); err != nil {
 		errorMessage := utils.FormatValidationError(err)
 		utils.ErrorResponse(c, http.StatusBadRequest, errorMessage, err)
 		return
 	}
 
-	createdJadwal, err := h.Repo.Create(newJadwal)
+	newAntrian := model.Antrian{
+		JadwalID:  input.JadwalID,
+		PasienID:  input.PasienID,
+		Prioritas: input.Prioritas,
+		Status:    input.Status,
+	}
+
+	createdAntrian, err := h.Repo.Create(newAntrian)
 	if err != nil {
-		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-			utils.ErrorResponse(c, http.StatusConflict, "data already exists", nil)
+		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23503" {
+			utils.ErrorResponse(c, http.StatusBadRequest, "invalid jadwal id or pasien id", nil)
 			return
 		}
 		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to create data", err)
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusCreated, createdJadwal, "data created successfully")
+	utils.SuccessResponse(c, http.StatusCreated, createdAntrian, "data created successfully")
 }
 
-func (h *JadwalHandler) GetAll(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "5"))
-	sort := c.DefaultQuery("sort", "tanggal_desc")
+func (h *AntrianHandler) GetAll(c *gin.Context) {
 
-	poliID, _ := strconv.Atoi(c.Query("poli_id"))
-	petugasID, _ := strconv.Atoi(c.Query("petugas_id"))
-	startDate := c.Query("start_date")
-	endDate := c.Query("end_date")
+	params := repository.ParamsGetAllAntrian{}
 
-	params := repository.ParamsGetAllJadwal{
-		PoliIDFilter:    poliID,
-		PetugasIDFilter: petugasID,
-		StartDateFilter: startDate,
-		EndDateFilter:   endDate,
-		SortBy:          sort,
-		Page:            page,
-		PageSize:        pageSize,
-	}
-
-	allJadwal, metadata, err := h.Repo.GetAll(params)
+	allAntrian, metadata, err := h.Repo.GetAll(params)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to retrieve data", err)
 		return
 	}
 
-	var responseData []model.JadwalDetail
-	for _, jadwal := range allJadwal {
-		detail := model.JadwalDetail{
-			ID:           jadwal.ID,
-			Tanggal:      jadwal.Tanggal,
-			WaktuMulai:   jadwal.WaktuMulai,
-			WaktuSelesai: jadwal.WaktuSelesai,
-			Keterangan:   jadwal.Keterangan,
-			Petugas: struct {
-				ID   int    `json:"id"`
-				Name string `json:"name"`
+	var responseData []model.AntrianDetail
+	for _, antrian := range allAntrian {
+		detail := model.AntrianDetail{
+			ID:           antrian.ID,
+			NomorAntrian: antrian.NomorAntrian,
+			Prioritas:    antrian.Prioritas,
+			Status:       antrian.Status,
+			Jadwal: struct {
+				ID      int    `json:"id"`
+				Tanggal string `json:"tanggal"`
+				Poli    struct {
+					Name string `json:"name"`
+				} `json:"poli"`
+				Dokter struct {
+					Name string `json:"name"`
+				} `json:"dokter"`
 			}{
-				ID:   jadwal.Petugas.ID,
-				Name: jadwal.Petugas.Name,
+				ID:      antrian.Jadwal.ID,
+				Tanggal: antrian.Jadwal.Tanggal,
+				Poli: struct {
+					Name string `json:"name"`
+				}{Name: antrian.Jadwal.Poli.Name},
+				Dokter: struct {
+					Name string `json:"name"`
+				}{Name: antrian.Jadwal.Petugas.Name},
 			},
-			Poli: struct {
+			Pasien: struct {
 				ID   int    `json:"id"`
 				Name string `json:"name"`
 			}{
-				ID:   jadwal.Poli.ID,
-				Name: jadwal.Poli.Name,
+				ID:   antrian.Pasien.ID,
+				Name: antrian.Pasien.NamaPasien,
 			},
 		}
 		responseData = append(responseData, detail)
@@ -100,41 +102,41 @@ func (h *JadwalHandler) GetAll(c *gin.Context) {
 	})
 }
 
-func (h *JadwalHandler) GetByID(c *gin.Context) {
+func (h *AntrianHandler) GetByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, "invalid ID format", err)
 		return
 	}
 
-	jadwal, err := h.Repo.GetByID(id)
+	antrian, err := h.Repo.GetByID(id)
 	if err != nil {
 		if err == repository.ErrNotFound {
 			utils.ErrorResponse(c, http.StatusNotFound, "data not found", nil)
 			return
 		}
-		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to retrieve data", err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve data", err)
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, jadwal, "success")
+	utils.SuccessResponse(c, http.StatusOK, antrian, "success")
 }
 
-func (h *JadwalHandler) Update(c *gin.Context) {
+func (h *AntrianHandler) Update(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, "invalid ID format", err)
 		return
 	}
 
-	var updatedJadwal model.Jadwal
-	if err := c.ShouldBindJSON(&updatedJadwal); err != nil {
+	var updatedAntrian model.Antrian
+	if err := c.ShouldBindJSON(&updatedAntrian); err != nil {
 		errorMessage := utils.FormatValidationError(err)
 		utils.ErrorResponse(c, http.StatusBadRequest, errorMessage, err)
 		return
 	}
 
-	result, err := h.Repo.Update(id, updatedJadwal)
+	result, err := h.Repo.Update(id, updatedAntrian)
 	if err != nil {
 		if err == repository.ErrNotFound {
 			utils.ErrorResponse(c, http.StatusNotFound, "data not found", nil)
@@ -147,7 +149,7 @@ func (h *JadwalHandler) Update(c *gin.Context) {
 	utils.SuccessResponse(c, http.StatusOK, result, "data updated successfully")
 }
 
-func (h *JadwalHandler) Delete(c *gin.Context) {
+func (h *AntrianHandler) Delete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, "invalid ID format", err)

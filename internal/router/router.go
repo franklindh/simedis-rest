@@ -26,6 +26,9 @@ func New(app *config.Application) *gin.Engine {
 	pasienRepo := repository.NewPasienRepository(db)
 	pasienHandler := handler.NewPasienHandler(pasienRepo)
 
+	antrianRepo := repository.NewAntrianRepository(db)
+	antrianHandler := handler.NewAntrianHandler(antrianRepo)
+
 	// publc
 	router.POST("/login/petugas", petugasHandler.Login)
 
@@ -36,6 +39,7 @@ func New(app *config.Application) *gin.Engine {
 		PetugasRoutes(authRoutes, petugasHandler)
 		JadwalRoutes(authRoutes, jadwalHandler)
 		PasienRoutes(authRoutes, pasienHandler)
+		AntrianRoutes(authRoutes, antrianHandler)
 	}
 
 	return router
