@@ -51,6 +51,13 @@ func (h *JadwalHandler) GetAll(c *gin.Context) {
 	startDate := c.Query("start_date")
 	endDate := c.Query("end_date")
 
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 5
+	}
+
 	params := repository.ParamsGetAllJadwal{
 		PoliIDFilter:    poliID,
 		PetugasIDFilter: petugasID,

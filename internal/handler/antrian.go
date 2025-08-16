@@ -50,7 +50,28 @@ func (h *AntrianHandler) Create(c *gin.Context) {
 
 func (h *AntrianHandler) GetAll(c *gin.Context) {
 
-	params := repository.ParamsGetAllAntrian{}
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
+	sort := c.DefaultQuery("sort", "created_at_asc")
+	statusFilter := c.Query("status")
+	tanggalFilter := c.Query("tanggal")
+	poliID, _ := strconv.Atoi(c.Query("poli_id"))
+
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 5
+	}
+
+	params := repository.ParamsGetAllAntrian{
+		StatusFilter:  statusFilter,
+		TanggalFilter: tanggalFilter,
+		PoliIDFilter:  poliID,
+		SortBy:        sort,
+		Page:          page,
+		PageSize:      pageSize,
+	}
 
 	allAntrian, metadata, err := h.Repo.GetAll(params)
 	if err != nil {

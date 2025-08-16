@@ -49,6 +49,13 @@ func (h *PasienHandler) GetAll(c *gin.Context) {
 	nikFilter := c.Query("nik")
 	noRekamMedis := c.Query("no_rekam_medis")
 
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 5
+	}
+
 	params := repository.ParamsGetAllPasien{
 		NameFilter:   nameFilter,
 		NIKFilter:    nikFilter,

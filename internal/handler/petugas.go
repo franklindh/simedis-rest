@@ -67,6 +67,13 @@ func (h *PetugasHandler) GetAll(c *gin.Context) {
 	roleFilter := c.Query("role")
 	statusFilter := c.Query("status")
 
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 5
+	}
+
 	params := repository.ParamsGetAllPetugas{
 		NameOrUsernameFilter: nameFilter,
 		RoleFilter:           roleFilter,
