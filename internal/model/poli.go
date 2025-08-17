@@ -8,7 +8,7 @@ import (
 
 type Poli struct {
 	ID        int            `json:"id,omitempty" gorm:"primaryKey;column:id_poli"`
-	Name      string         `json:"name" gorm:"column:nama_poli" binding:"required,min=3,max=50"`
+	Nama      string         `json:"nama" gorm:"column:nama_poli" binding:"required,min=3,max=50"`
 	Status    string         `json:"status" gorm:"column:status_poli" binding:"required,oneof=aktif nonaktif"`
 	CreatedAt time.Time      `json:"created_at" gorm:"column:created_at"`
 	UpdatedAt time.Time      `json:"updated_at" gorm:"column:updated_at"`

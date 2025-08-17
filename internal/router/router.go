@@ -5,6 +5,7 @@ import (
 	"github.com/franklindh/simedis-api/internal/handler"
 	"github.com/franklindh/simedis-api/internal/middleware"
 	"github.com/franklindh/simedis-api/internal/repository"
+	"github.com/franklindh/simedis-api/service"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,7 +16,8 @@ func New(app *config.Application) *gin.Engine {
 	cfg := app.Config
 
 	poliRepo := repository.NewPoliRepository(db)
-	poliHandler := handler.NewPoliHandler(poliRepo)
+	poliService := service.NewPoliService(poliRepo)
+	poliHandler := handler.NewPoliHandler(poliService)
 
 	petugasRepo := repository.NewPetugasRepository(db)
 	petugasHandler := handler.NewPetugasHandler(petugasRepo, cfg)

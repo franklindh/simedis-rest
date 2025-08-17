@@ -94,7 +94,7 @@ func (h *JadwalHandler) GetAll(c *gin.Context) {
 				Name string `json:"name"`
 			}{
 				ID:   jadwal.Poli.ID,
-				Name: jadwal.Poli.Name,
+				Name: jadwal.Poli.Nama,
 			},
 		}
 		responseData = append(responseData, detail)

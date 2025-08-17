@@ -31,7 +31,7 @@ func NewAntrianRepository(db *gorm.DB) *AntrianRepository {
 func (r *AntrianRepository) Create(antrian model.Antrian) (model.Antrian, error) {
 	var jadwal model.Jadwal
 	if err := r.DB.Preload("Poli").First(&jadwal, antrian.JadwalID).Error; err == nil {
-		initial := strings.ToUpper(string(jadwal.Poli.Name[0]))
+		initial := strings.ToUpper(string(jadwal.Poli.Nama[0]))
 		antrian.NomorAntrian = fmt.Sprintf("%s%d", initial, time.Now().Unix()%1000)
 	}
 

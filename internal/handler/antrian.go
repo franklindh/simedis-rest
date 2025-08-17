@@ -100,7 +100,7 @@ func (h *AntrianHandler) GetAll(c *gin.Context) {
 				Tanggal: antrian.Jadwal.Tanggal,
 				Poli: struct {
 					Name string `json:"name"`
-				}{Name: antrian.Jadwal.Poli.Name},
+				}{Name: antrian.Jadwal.Poli.Nama},
 				Dokter: struct {
 					Name string `json:"name"`
 				}{Name: antrian.Jadwal.Petugas.Name},

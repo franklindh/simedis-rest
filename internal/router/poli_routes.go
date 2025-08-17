@@ -12,6 +12,6 @@ func PoliRoutes(rg *gin.RouterGroup, h *handler.PoliHandler) {
 		poliRoutes.POST("", h.Create)
 		poliRoutes.GET("/:id", h.GetByID)
 		poliRoutes.PUT("/:id", h.Update)
-		poliRoutes.DELETE("/id", h.Delete)
+		poliRoutes.DELETE("/:id", h.Delete)
 	}
 }
