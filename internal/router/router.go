@@ -29,7 +29,10 @@ func New(app *config.Application) *gin.Engine {
 	antrianRepo := repository.NewAntrianRepository(db)
 	antrianHandler := handler.NewAntrianHandler(antrianRepo)
 
-	// publc
+	icdRepo := repository.NewIcdRepository(db)
+	icdHandler := handler.NewIcdHandler(icdRepo)
+
+	// public
 	router.POST("/login/petugas", petugasHandler.Login)
 
 	authRoutes := router.Group("/")
@@ -40,6 +43,7 @@ func New(app *config.Application) *gin.Engine {
 		JadwalRoutes(authRoutes, jadwalHandler)
 		PasienRoutes(authRoutes, pasienHandler)
 		AntrianRoutes(authRoutes, antrianHandler)
+		IcdRoutes(authRoutes, icdHandler)
 	}
 
 	return router
