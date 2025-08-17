@@ -1,37 +1,40 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/franklindh/simedis-api/internal/model"
 	"github.com/franklindh/simedis-api/internal/repository"
 	"github.com/franklindh/simedis-api/pkg/utils"
+	"github.com/franklindh/simedis-api/service"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type JadwalHandler struct {
-	Repo *repository.JadwalRepository
+	Service *service.JadwalService
 }
 
-func NewJadwalHandler(repo *repository.JadwalRepository) *JadwalHandler {
-	return &JadwalHandler{Repo: repo}
+func NewJadwalHandler(svc *service.JadwalService) *JadwalHandler {
+	return &JadwalHandler{Service: svc}
 }
 
 func (h *JadwalHandler) Create(c *gin.Context) {
-	var newJadwal model.Jadwal
-
-	if err := c.ShouldBindJSON(&newJadwal); err != nil {
-		errorMessage := utils.FormatValidationError(err)
-		utils.ErrorResponse(c, http.StatusBadRequest, errorMessage, err)
+	var req model.JadwalRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, utils.FormatValidationError(err), err)
 		return
 	}
 
-	createdJadwal, err := h.Repo.Create(newJadwal)
+	createdJadwal, err := h.Service.CreateJadwal(c.Request.Context(), req)
 	if err != nil {
-		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-			utils.ErrorResponse(c, http.StatusConflict, "data already exists", nil)
+		if errors.Is(err, service.ErrWaktuSelesaiInvalid) {
+			utils.ErrorResponse(c, http.StatusBadRequest, err.Error(), nil)
+			return
+		}
+		if errors.Is(err, service.ErrJadwalConflict) {
+			utils.ErrorResponse(c, http.StatusConflict, err.Error(), nil)
 			return
 		}
 		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to create data", err)
@@ -44,60 +47,23 @@ func (h *JadwalHandler) Create(c *gin.Context) {
 func (h *JadwalHandler) GetAll(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "5"))
-	sort := c.DefaultQuery("sort", "tanggal_desc")
-
 	poliID, _ := strconv.Atoi(c.Query("poli_id"))
 	petugasID, _ := strconv.Atoi(c.Query("petugas_id"))
-	startDate := c.Query("start_date")
-	endDate := c.Query("end_date")
-
-	if page <= 0 {
-		page = 1
-	}
-	if pageSize <= 0 {
-		pageSize = 5
-	}
 
 	params := repository.ParamsGetAllJadwal{
-		PoliIDFilter:    poliID,
-		PetugasIDFilter: petugasID,
-		StartDateFilter: startDate,
-		EndDateFilter:   endDate,
-		SortBy:          sort,
 		Page:            page,
 		PageSize:        pageSize,
+		SortBy:          c.DefaultQuery("sort", "tanggal_desc"),
+		PoliIDFilter:    poliID,
+		PetugasIDFilter: petugasID,
+		StartDateFilter: c.Query("start_date"),
+		EndDateFilter:   c.Query("end_date"),
 	}
 
-	allJadwal, metadata, err := h.Repo.GetAll(params)
+	responseData, metadata, err := h.Service.GetAllJadwalDetails(c.Request.Context(), params)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to retrieve data", err)
 		return
-	}
-
-	var responseData []model.JadwalDetail
-	for _, jadwal := range allJadwal {
-		detail := model.JadwalDetail{
-			ID:           jadwal.ID,
-			Tanggal:      jadwal.Tanggal,
-			WaktuMulai:   jadwal.WaktuMulai,
-			WaktuSelesai: jadwal.WaktuSelesai,
-			Keterangan:   jadwal.Keterangan,
-			Petugas: struct {
-				ID   int    `json:"id"`
-				Name string `json:"name"`
-			}{
-				ID:   jadwal.Petugas.ID,
-				Name: jadwal.Petugas.Nama,
-			},
-			Poli: struct {
-				ID   int    `json:"id"`
-				Name string `json:"name"`
-			}{
-				ID:   jadwal.Poli.ID,
-				Name: jadwal.Poli.Nama,
-			},
-		}
-		responseData = append(responseData, detail)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -114,9 +80,9 @@ func (h *JadwalHandler) GetByID(c *gin.Context) {
 		return
 	}
 
-	jadwal, err := h.Repo.GetByID(id)
+	jadwal, err := h.Service.GetJadwalByID(c.Request.Context(), id)
 	if err != nil {
-		if err == repository.ErrNotFound {
+		if errors.Is(err, repository.ErrNotFound) {
 			utils.ErrorResponse(c, http.StatusNotFound, "data not found", nil)
 			return
 		}
@@ -134,17 +100,20 @@ func (h *JadwalHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var updatedJadwal model.Jadwal
-	if err := c.ShouldBindJSON(&updatedJadwal); err != nil {
-		errorMessage := utils.FormatValidationError(err)
-		utils.ErrorResponse(c, http.StatusBadRequest, errorMessage, err)
+	var req model.JadwalRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, utils.FormatValidationError(err), err)
 		return
 	}
 
-	result, err := h.Repo.Update(id, updatedJadwal)
+	result, err := h.Service.UpdateJadwal(c.Request.Context(), id, req)
 	if err != nil {
-		if err == repository.ErrNotFound {
+		if errors.Is(err, repository.ErrNotFound) {
 			utils.ErrorResponse(c, http.StatusNotFound, "data not found", nil)
+			return
+		}
+		if errors.Is(err, service.ErrJadwalConflict) {
+			utils.ErrorResponse(c, http.StatusConflict, err.Error(), nil)
 			return
 		}
 		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to update data", err)
@@ -161,9 +130,9 @@ func (h *JadwalHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	err = h.Repo.Delete(id)
+	err = h.Service.DeleteJadwal(c.Request.Context(), id)
 	if err != nil {
-		if err == repository.ErrNotFound {
+		if errors.Is(err, repository.ErrNotFound) {
 			utils.ErrorResponse(c, http.StatusNotFound, "data not found", nil)
 			return
 		}
