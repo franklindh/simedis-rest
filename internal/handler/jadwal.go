@@ -87,7 +87,7 @@ func (h *JadwalHandler) GetAll(c *gin.Context) {
 				Name string `json:"name"`
 			}{
 				ID:   jadwal.Petugas.ID,
-				Name: jadwal.Petugas.Name,
+				Name: jadwal.Petugas.Nama,
 			},
 			Poli: struct {
 				ID   int    `json:"id"`

@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/franklindh/simedis-api/internal/model"
-	"github.com/franklindh/simedis-api/internal/repository" // For ErrNotFound
+	"github.com/franklindh/simedis-api/internal/repository"
 	"github.com/franklindh/simedis-api/pkg/utils"
 	"github.com/franklindh/simedis-api/service"
 	"github.com/gin-gonic/gin"
@@ -33,10 +33,10 @@ func (h *PoliHandler) Create(c *gin.Context) {
 		case errors.Is(err, service.ErrPoliConflict):
 			utils.ErrorResponse(c, http.StatusConflict, err.Error(), nil)
 		case errors.Is(err, service.ErrPoliRestored):
-			// This is a "success" case communicated via an error.
+
 			utils.SuccessResponse(c, http.StatusOK, createdPoli, err.Error())
 		default:
-			// For any other error (DB error, etc.)
+
 			utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to create data", err)
 		}
 		return

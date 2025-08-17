@@ -20,7 +20,8 @@ func New(app *config.Application) *gin.Engine {
 	poliHandler := handler.NewPoliHandler(poliService)
 
 	petugasRepo := repository.NewPetugasRepository(db)
-	petugasHandler := handler.NewPetugasHandler(petugasRepo, cfg)
+	petugasService := service.NewPetugasService(petugasRepo, cfg)
+	petugasHandler := handler.NewPetugasHandler(petugasService)
 
 	jadwalRepo := repository.NewJadwalRepository(db)
 	jadwalHandler := handler.NewJadwalHandler(jadwalRepo)

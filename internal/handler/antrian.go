@@ -103,7 +103,7 @@ func (h *AntrianHandler) GetAll(c *gin.Context) {
 				}{Name: antrian.Jadwal.Poli.Nama},
 				Dokter: struct {
 					Name string `json:"name"`
-				}{Name: antrian.Jadwal.Petugas.Name},
+				}{Name: antrian.Jadwal.Petugas.Nama},
 			},
 			Pasien: struct {
 				ID   int    `json:"id"`

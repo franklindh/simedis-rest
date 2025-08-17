@@ -49,7 +49,7 @@ func (r *PetugasRepository) GetAll(params ParamsGetAllPetugas) ([]model.Petugas,
 	metadata := pagination.CalculateMetadata(int(totalRecords), params.Page, params.PageSize)
 
 	sortWhiteList := map[string]string{
-		"name_asc":  "nama_petugas ASC",
+		"nama_asc":  "nama_petugas ASC",
 		"nama_desc": "nama_petugas DESC",
 	}
 
