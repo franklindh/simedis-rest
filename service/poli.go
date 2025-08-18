@@ -2,12 +2,12 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 
 	"github.com/franklindh/simedis-api/internal/model"
 	"github.com/franklindh/simedis-api/internal/repository"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 var (
@@ -23,31 +23,19 @@ func NewPoliService(repo *repository.PoliRepository) *PoliService {
 	return &PoliService{repo: repo}
 }
 
-func (s *PoliService) CreateOrRestorePoli(ctx context.Context, poliInput model.Poli) (model.Poli, error) {
-
-	existingPoli, err := s.repo.FindByNameIncludingDeleted(poliInput.Nama)
-	if err != nil && err != sql.ErrNoRows {
-
-		return model.Poli{}, fmt.Errorf("database error: %w", err)
+func (s *PoliService) CreatePoli(ctx context.Context, req model.CreatePoliRequest) (model.Poli, error) {
+	poliInput := model.Poli{
+		Nama:   req.Name,
+		Status: req.Status,
 	}
 
-	if err == nil {
+	createdPoli, err := s.repo.Create(poliInput)
+	if err != nil {
 
-		if existingPoli.DeletedAt.Valid {
-			restoredPoli, restoreErr := s.repo.Restore(existingPoli.ID)
-			if restoreErr != nil {
-				return model.Poli{}, fmt.Errorf("failed to restore poli: %w", restoreErr)
-			}
-
-			return restoredPoli, ErrPoliRestored
+		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
+			return model.Poli{}, ErrPoliConflict
 		}
-
-		return model.Poli{}, ErrPoliConflict
-	}
-
-	createdPoli, createErr := s.repo.Create(poliInput)
-	if createErr != nil {
-		return model.Poli{}, fmt.Errorf("failed to create poli: %w", createErr)
+		return model.Poli{}, fmt.Errorf("failed to create poli: %w", err)
 	}
 	return createdPoli, nil
 }
@@ -60,18 +48,21 @@ func (s *PoliService) GetPoliByID(ctx context.Context, id int) (model.Poli, erro
 	return s.repo.GetByID(id)
 }
 
-func (s *PoliService) UpdatePoli(ctx context.Context, id int, poliInput model.Poli) (model.Poli, error) {
+func (s *PoliService) UpdatePoli(ctx context.Context, id int, req model.UpdatePoliRequest) (model.Poli, error) {
 
-	existing, err := s.repo.FindByName(poliInput.Nama)
-	if err != nil && err != repository.ErrNotFound {
+	existing, err := s.repo.FindByName(req.Name)
+	if err != nil && !errors.Is(err, repository.ErrNotFound) {
 		return model.Poli{}, fmt.Errorf("database error on check: %w", err)
 	}
-
 	if err == nil && existing.ID != id {
 		return model.Poli{}, ErrPoliConflict
 	}
 
-	return s.repo.Update(id, poliInput)
+	poliUpdate := model.Poli{
+		Nama:   req.Name,
+		Status: req.Status,
+	}
+	return s.repo.Update(id, poliUpdate)
 }
 
 func (s *PoliService) DeletePoli(ctx context.Context, id int) error {
