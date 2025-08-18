@@ -2,9 +2,6 @@ package repository
 
 import (
 	"errors"
-	"fmt"
-	"strings"
-	"time"
 
 	"github.com/franklindh/simedis-api/internal/model"
 	"github.com/franklindh/simedis-api/pkg/utils/pagination"
@@ -29,12 +26,6 @@ func NewAntrianRepository(db *gorm.DB) *AntrianRepository {
 }
 
 func (r *AntrianRepository) Create(antrian model.Antrian) (model.Antrian, error) {
-	var jadwal model.Jadwal
-	if err := r.DB.Preload("Poli").First(&jadwal, antrian.JadwalID).Error; err == nil {
-		initial := strings.ToUpper(string(jadwal.Poli.Name[0]))
-		antrian.NomorAntrian = fmt.Sprintf("%s%d", initial, time.Now().Unix()%1000)
-	}
-
 	result := r.DB.Create(&antrian)
 	if result.Error != nil {
 		return model.Antrian{}, result.Error
@@ -92,10 +83,7 @@ func (r *AntrianRepository) GetByID(id int) (model.Antrian, error) {
 }
 
 func (r *AntrianRepository) Update(id int, antrian model.Antrian) (model.Antrian, error) {
-	result := r.DB.Model(&model.Antrian{}).Where("id_antrian = ?", id).Updates(map[string]any{
-		"status":    antrian.Status,
-		"prioritas": antrian.Prioritas,
-	})
+	result := r.DB.Model(&antrian).Where("id_antrian = ?", id).Updates(antrian)
 	if result.Error != nil {
 		return model.Antrian{}, result.Error
 	}
@@ -111,4 +99,47 @@ func (r *AntrianRepository) Delete(id int) error {
 		return ErrNotFound
 	}
 	return result.Error
+}
+
+func (r *AntrianRepository) CheckAntrian(pasienID, jadwalID int) error {
+	var count int64
+
+	result := r.DB.Model(&model.Antrian{}).
+		Where("id_pasien = ?", pasienID).
+		Where("id_jadwal = ?", jadwalID).
+		Where("status IN ?", []string{"Menunggu", "Menunggu Diagnosis"}).
+		Count(&count)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	return ErrNotFound
+}
+
+func (r *AntrianRepository) CheckForOverlappingAntrian(pasienID int, tanggal string, waktuMulai string, waktuSelesai string) error {
+	var count int64
+
+	result := r.DB.Model(&model.Antrian{}).
+		Joins("JOIN jadwal ON antrian.id_jadwal = jadwal.id_jadwal").
+		Where("antrian.id_pasien = ?", pasienID).
+		Where("jadwal.tanggal_praktik = ?", tanggal).
+		Where("jadwal.waktu_selesai > ?", waktuMulai).
+		Where("jadwal.waktu_mulai < ?", waktuSelesai).
+		Where("antrian.status IN ?", []string{"Menunggu", "Menunggu Diagnosis"}).
+		Count(&count)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	return ErrNotFound
 }

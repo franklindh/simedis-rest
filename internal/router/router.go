@@ -5,6 +5,7 @@ import (
 	"github.com/franklindh/simedis-api/internal/handler"
 	"github.com/franklindh/simedis-api/internal/middleware"
 	"github.com/franklindh/simedis-api/internal/repository"
+	"github.com/franklindh/simedis-api/service"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,22 +16,28 @@ func New(app *config.Application) *gin.Engine {
 	cfg := app.Config
 
 	poliRepo := repository.NewPoliRepository(db)
-	poliHandler := handler.NewPoliHandler(poliRepo)
+	poliService := service.NewPoliService(poliRepo)
+	poliHandler := handler.NewPoliHandler(poliService)
 
 	petugasRepo := repository.NewPetugasRepository(db)
-	petugasHandler := handler.NewPetugasHandler(petugasRepo, cfg)
+	petugasService := service.NewPetugasService(petugasRepo, cfg)
+	petugasHandler := handler.NewPetugasHandler(petugasService)
 
 	jadwalRepo := repository.NewJadwalRepository(db)
-	jadwalHandler := handler.NewJadwalHandler(jadwalRepo)
+	jadwalService := service.NewJadwalService(jadwalRepo)
+	jadwalHandler := handler.NewJadwalHandler(jadwalService)
 
 	pasienRepo := repository.NewPasienRepository(db)
-	pasienHandler := handler.NewPasienHandler(pasienRepo)
+	pasienService := service.NewPasienService(pasienRepo)
+	pasienHandler := handler.NewPasienHandler(pasienService)
 
 	antrianRepo := repository.NewAntrianRepository(db)
-	antrianHandler := handler.NewAntrianHandler(antrianRepo)
+	antrianService := service.NewAntrianService(antrianRepo, jadwalRepo)
+	antrianHandler := handler.NewAntrianHandler(antrianService)
 
 	icdRepo := repository.NewIcdRepository(db)
-	icdHandler := handler.NewIcdHandler(icdRepo)
+	icdService := service.NewIcdService(icdRepo)
+	icdHandler := handler.NewIcdHandler(icdService)
 
 	// public
 	router.POST("/login/petugas", petugasHandler.Login)

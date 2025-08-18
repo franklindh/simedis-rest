@@ -40,7 +40,7 @@ func FormatValidationError(err error) string {
 }
 
 func ValidatePetugasUsername(petugas model.Petugas) error {
-	if petugas.Username == "" || petugas.Name == "" {
+	if petugas.Username == "" || petugas.Nama == "" {
 		return errors.New("username and name are required fields")
 	}
 
