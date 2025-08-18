@@ -36,7 +36,8 @@ func New(app *config.Application) *gin.Engine {
 	antrianHandler := handler.NewAntrianHandler(antrianService)
 
 	icdRepo := repository.NewIcdRepository(db)
-	icdHandler := handler.NewIcdHandler(icdRepo)
+	icdService := service.NewIcdService(icdRepo)
+	icdHandler := handler.NewIcdHandler(icdService)
 
 	// public
 	router.POST("/login/petugas", petugasHandler.Login)

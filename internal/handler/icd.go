@@ -1,37 +1,36 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
-
 	"strconv"
 
 	"github.com/franklindh/simedis-api/internal/model"
 	"github.com/franklindh/simedis-api/internal/repository"
 	"github.com/franklindh/simedis-api/pkg/utils"
+	"github.com/franklindh/simedis-api/service"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type IcdHandler struct {
-	Repo *repository.IcdRepository
+	Service *service.IcdService
 }
 
-func NewIcdHandler(repo *repository.IcdRepository) *IcdHandler {
-	return &IcdHandler{Repo: repo}
+func NewIcdHandler(svc *service.IcdService) *IcdHandler {
+	return &IcdHandler{Service: svc}
 }
 
 func (h *IcdHandler) Create(c *gin.Context) {
-	var newIcd model.Icd
-	if err := c.ShouldBindJSON(&newIcd); err != nil {
-		errorMessage := utils.FormatValidationError(err)
-		utils.ErrorResponse(c, http.StatusBadRequest, errorMessage, err)
+	var req model.CreateIcdRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, utils.FormatValidationError(err), err)
 		return
 	}
 
-	createdIcd, err := h.Repo.Create(newIcd)
+	createdIcd, err := h.Service.CreateIcd(c.Request.Context(), req)
 	if err != nil {
-		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-			utils.ErrorResponse(c, http.StatusConflict, "data already exists", nil)
+		if errors.Is(err, service.ErrIcdConflict) {
+			utils.ErrorResponse(c, http.StatusConflict, err.Error(), nil)
 			return
 		}
 		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to create data", err)
@@ -44,28 +43,17 @@ func (h *IcdHandler) Create(c *gin.Context) {
 func (h *IcdHandler) GetAll(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "5"))
-	sort := c.DefaultQuery("sort", "kode_asc")
-	kodeFilter := c.Query("kode")
-	namaFilter := c.Query("nama")
-	statusFilter := c.Query("status")
-
-	if page <= 0 {
-		page = 1
-	}
-	if pageSize <= 0 {
-		pageSize = 5
-	}
 
 	params := repository.ParamsGetAllIcd{
-		KodeFilter:   kodeFilter,
-		NamaFilter:   namaFilter,
-		StatusFilter: statusFilter,
-		SortBy:       sort,
 		Page:         page,
 		PageSize:     pageSize,
+		SortBy:       c.DefaultQuery("sort", "kode_asc"),
+		KodeFilter:   c.Query("kode"),
+		NamaFilter:   c.Query("nama"),
+		StatusFilter: c.Query("status"),
 	}
 
-	allIcd, metadata, err := h.Repo.GetAll(params)
+	allIcd, metadata, err := h.Service.GetAllIcd(c.Request.Context(), params)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to retrieve data", err)
 		return
@@ -81,13 +69,13 @@ func (h *IcdHandler) GetAll(c *gin.Context) {
 func (h *IcdHandler) GetByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid ID format", err)
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid id format", err)
 		return
 	}
 
-	icd, err := h.Repo.GetByID(id)
+	icd, err := h.Service.GetIcdByID(c.Request.Context(), id)
 	if err != nil {
-		if err == repository.ErrNotFound {
+		if errors.Is(err, repository.ErrNotFound) {
 			utils.ErrorResponse(c, http.StatusNotFound, "data not found", nil)
 			return
 		}
@@ -101,25 +89,24 @@ func (h *IcdHandler) GetByID(c *gin.Context) {
 func (h *IcdHandler) Update(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid ID format", err)
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid id format", err)
 		return
 	}
 
-	var updatedIcd model.Icd
-	if err := c.ShouldBindJSON(&updatedIcd); err != nil {
-		errorMessage := utils.FormatValidationError(err)
-		utils.ErrorResponse(c, http.StatusBadRequest, errorMessage, err)
+	var req model.UpdateIcdRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, utils.FormatValidationError(err), err)
 		return
 	}
 
-	result, err := h.Repo.Update(id, updatedIcd)
+	result, err := h.Service.UpdateIcd(c.Request.Context(), id, req)
 	if err != nil {
-		if err == repository.ErrNotFound {
+		if errors.Is(err, repository.ErrNotFound) {
 			utils.ErrorResponse(c, http.StatusNotFound, "data not found", nil)
 			return
 		}
-		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-			utils.ErrorResponse(c, http.StatusConflict, "data already exists", nil)
+		if errors.Is(err, service.ErrIcdConflict) {
+			utils.ErrorResponse(c, http.StatusConflict, err.Error(), nil)
 			return
 		}
 		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to update data", err)
@@ -132,13 +119,13 @@ func (h *IcdHandler) Update(c *gin.Context) {
 func (h *IcdHandler) Delete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid ID format", err)
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid id format", err)
 		return
 	}
 
-	err = h.Repo.Delete(id)
+	err = h.Service.DeleteIcd(c.Request.Context(), id)
 	if err != nil {
-		if err == repository.ErrNotFound {
+		if errors.Is(err, repository.ErrNotFound) {
 			utils.ErrorResponse(c, http.StatusNotFound, "data not found", nil)
 			return
 		}

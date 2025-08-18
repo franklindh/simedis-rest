@@ -9,10 +9,10 @@ import (
 
 type Icd struct {
 	ID           int            `json:"id,omitempty" gorm:"primaryKey;column:id_icd"`
-	KodeIcd      string         `json:"kode_icd" gorm:"column:kode_icd;unique" binding:"required"`
-	NamaPenyakit string         `json:"nama_penyakit" gorm:"column:nama_penyakit" binding:"required,min=3"`
+	KodeIcd      string         `json:"kode_icd" gorm:"column:kode_icd;unique"`
+	NamaPenyakit string         `json:"nama_penyakit" gorm:"column:nama_penyakit"`
 	Deskripsi    sql.NullString `json:"deskripsi,omitempty" gorm:"column:deskripsi_penyakit"`
-	Status       string         `json:"status" gorm:"column:status_icd" binding:"required,oneof=aktif nonaktif"`
+	Status       string         `json:"status" gorm:"column:status_icd"`
 	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index;column:deleted_at"`
 	CreatedAt    time.Time      `json:"created_at" gorm:"column:created_at"`
 	UpdatedAt    time.Time      `json:"updated_at" gorm:"column:updated_at"`
@@ -20,4 +20,18 @@ type Icd struct {
 
 func (Icd) TableName() string {
 	return "icd"
+}
+
+type CreateIcdRequest struct {
+	KodeIcd      string `json:"kode_icd" binding:"required"`
+	NamaPenyakit string `json:"nama_penyakit" binding:"required,min=3"`
+	Deskripsi    string `json:"deskripsi,omitempty"`
+	Status       string `json:"status" binding:"required,oneof=aktif nonaktif"`
+}
+
+type UpdateIcdRequest struct {
+	KodeIcd      string `json:"kode_icd" binding:"required"`
+	NamaPenyakit string `json:"nama_penyakit" binding:"required,min=3"`
+	Deskripsi    string `json:"deskripsi,omitempty"`
+	Status       string `json:"status" binding:"required,oneof=aktif nonaktif"`
 }
