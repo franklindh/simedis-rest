@@ -8,22 +8,26 @@ import (
 
 type Antrian struct {
 	ID           int            `json:"id,omitempty" gorm:"primaryKey;column:id_antrian"`
-	JadwalID     int            `json:"jadwal_id" gorm:"column:id_jadwal" binding:"required,gt=0"`
-	PasienID     int            `json:"pasien_id" gorm:"column:id_pasien" binding:"required,gt=0"`
+	JadwalID     int            `json:"jadwal_id" gorm:"column:id_jadwal"`
+	PasienID     int            `json:"pasien_id" gorm:"column:id_pasien"`
 	NomorAntrian string         `json:"nomor_antrian" gorm:"column:nomor_antrian"`
-	Prioritas    string         `json:"prioritas" gorm:"column:prioritas" binding:"required,oneof=Gawat 'Non Gawat'"`
-	Status       string         `json:"status" gorm:"column:status" binding:"required,oneof=Menunggu 'Menunggu Diagnosis' Selesai"`
+	Prioritas    string         `json:"prioritas" gorm:"column:prioritas"`
+	Status       string         `json:"status" gorm:"column:status"`
 	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index;column:deleted_at"`
 	CreatedAt    time.Time      `json:"created_at" gorm:"column:created_at"`
 	UpdatedAt    time.Time      `json:"updated_at" gorm:"column:updated_at"`
 
-	Jadwal Jadwal `json:"jadwal,omitempty" gorm:"foreignKey:JadwalID"`
-	Pasien Pasien `json:"pasien,omitempty" gorm:"foreignKey:PasienID"`
+	Jadwal Jadwal `json:"jadwal" gorm:"foreignKey:JadwalID"`
+	Pasien Pasien `json:"pasien" gorm:"foreignKey:PasienID"`
 }
 
-type AntrianCreateInput struct {
+type CreateAntrianRequest struct {
 	JadwalID  int    `json:"jadwal_id" binding:"required,gt=0"`
 	PasienID  int    `json:"pasien_id" binding:"required,gt=0"`
+	Prioritas string `json:"prioritas" binding:"required,oneof=Gawat 'Non Gawat'"`
+}
+
+type UpdateAntrianRequest struct {
 	Prioritas string `json:"prioritas" binding:"required,oneof=Gawat 'Non Gawat'"`
 	Status    string `json:"status" binding:"required,oneof=Menunggu 'Menunggu Diagnosis' Selesai"`
 }
