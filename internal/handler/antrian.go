@@ -1,44 +1,44 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
-
 	"strconv"
 
 	"github.com/franklindh/simedis-api/internal/model"
 	"github.com/franklindh/simedis-api/internal/repository"
 	"github.com/franklindh/simedis-api/pkg/utils"
+	"github.com/franklindh/simedis-api/service"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type AntrianHandler struct {
-	Repo *repository.AntrianRepository
+	Service *service.AntrianService
 }
 
-func NewAntrianHandler(repo *repository.AntrianRepository) *AntrianHandler {
-	return &AntrianHandler{Repo: repo}
+func NewAntrianHandler(svc *service.AntrianService) *AntrianHandler {
+	return &AntrianHandler{Service: svc}
 }
 
 func (h *AntrianHandler) Create(c *gin.Context) {
-	var input model.AntrianCreateInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		errorMessage := utils.FormatValidationError(err)
-		utils.ErrorResponse(c, http.StatusBadRequest, errorMessage, err)
+	var req model.CreateAntrianRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, utils.FormatValidationError(err), err)
 		return
 	}
 
-	newAntrian := model.Antrian{
-		JadwalID:  input.JadwalID,
-		PasienID:  input.PasienID,
-		Prioritas: input.Prioritas,
-		Status:    input.Status,
-	}
-
-	createdAntrian, err := h.Repo.Create(newAntrian)
+	createdAntrian, err := h.Service.CreateAntrian(c.Request.Context(), req)
 	if err != nil {
-		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23503" {
-			utils.ErrorResponse(c, http.StatusBadRequest, "invalid jadwal id or pasien id", nil)
+		if errors.Is(err, service.ErrScheduleOverlap) {
+			utils.ErrorResponse(c, http.StatusConflict, err.Error(), nil)
+			return
+		}
+		if errors.Is(err, service.ErrAntrianExists) {
+			utils.ErrorResponse(c, http.StatusConflict, err.Error(), nil)
+			return
+		}
+		if errors.Is(err, service.ErrForeignKey) {
+			utils.ErrorResponse(c, http.StatusBadRequest, err.Error(), nil)
 			return
 		}
 		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to create data", err)
@@ -49,71 +49,23 @@ func (h *AntrianHandler) Create(c *gin.Context) {
 }
 
 func (h *AntrianHandler) GetAll(c *gin.Context) {
-
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
-	sort := c.DefaultQuery("sort", "created_at_asc")
-	statusFilter := c.Query("status")
-	tanggalFilter := c.Query("tanggal")
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "5"))
 	poliID, _ := strconv.Atoi(c.Query("poli_id"))
 
-	if page <= 0 {
-		page = 1
-	}
-	if pageSize <= 0 {
-		pageSize = 5
-	}
-
 	params := repository.ParamsGetAllAntrian{
-		StatusFilter:  statusFilter,
-		TanggalFilter: tanggalFilter,
-		PoliIDFilter:  poliID,
-		SortBy:        sort,
 		Page:          page,
 		PageSize:      pageSize,
+		SortBy:        c.DefaultQuery("sort", "created_at_asc"),
+		StatusFilter:  c.Query("status"),
+		TanggalFilter: c.Query("tanggal"),
+		PoliIDFilter:  poliID,
 	}
 
-	allAntrian, metadata, err := h.Repo.GetAll(params)
+	responseData, metadata, err := h.Service.GetAllAntrianDetails(c.Request.Context(), params)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to retrieve data", err)
 		return
-	}
-
-	var responseData []model.AntrianDetail
-	for _, antrian := range allAntrian {
-		detail := model.AntrianDetail{
-			ID:           antrian.ID,
-			NomorAntrian: antrian.NomorAntrian,
-			Prioritas:    antrian.Prioritas,
-			Status:       antrian.Status,
-			Jadwal: struct {
-				ID      int    `json:"id"`
-				Tanggal string `json:"tanggal"`
-				Poli    struct {
-					Name string `json:"name"`
-				} `json:"poli"`
-				Dokter struct {
-					Name string `json:"name"`
-				} `json:"dokter"`
-			}{
-				ID:      antrian.Jadwal.ID,
-				Tanggal: antrian.Jadwal.Tanggal,
-				Poli: struct {
-					Name string `json:"name"`
-				}{Name: antrian.Jadwal.Poli.Nama},
-				Dokter: struct {
-					Name string `json:"name"`
-				}{Name: antrian.Jadwal.Petugas.Nama},
-			},
-			Pasien: struct {
-				ID   int    `json:"id"`
-				Name string `json:"name"`
-			}{
-				ID:   antrian.Pasien.ID,
-				Name: antrian.Pasien.NamaPasien,
-			},
-		}
-		responseData = append(responseData, detail)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -126,13 +78,13 @@ func (h *AntrianHandler) GetAll(c *gin.Context) {
 func (h *AntrianHandler) GetByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid ID format", err)
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid id format", err)
 		return
 	}
 
-	antrian, err := h.Repo.GetByID(id)
+	antrian, err := h.Service.GetAntrianByID(c.Request.Context(), id)
 	if err != nil {
-		if err == repository.ErrNotFound {
+		if errors.Is(err, repository.ErrNotFound) {
 			utils.ErrorResponse(c, http.StatusNotFound, "data not found", nil)
 			return
 		}
@@ -146,20 +98,19 @@ func (h *AntrianHandler) GetByID(c *gin.Context) {
 func (h *AntrianHandler) Update(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid ID format", err)
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid id format", err)
 		return
 	}
 
-	var updatedAntrian model.Antrian
-	if err := c.ShouldBindJSON(&updatedAntrian); err != nil {
-		errorMessage := utils.FormatValidationError(err)
-		utils.ErrorResponse(c, http.StatusBadRequest, errorMessage, err)
+	var req model.UpdateAntrianRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, utils.FormatValidationError(err), err)
 		return
 	}
 
-	result, err := h.Repo.Update(id, updatedAntrian)
+	result, err := h.Service.UpdateAntrian(c.Request.Context(), id, req)
 	if err != nil {
-		if err == repository.ErrNotFound {
+		if errors.Is(err, repository.ErrNotFound) {
 			utils.ErrorResponse(c, http.StatusNotFound, "data not found", nil)
 			return
 		}
@@ -173,13 +124,13 @@ func (h *AntrianHandler) Update(c *gin.Context) {
 func (h *AntrianHandler) Delete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "invalid ID format", err)
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid id format", err)
 		return
 	}
 
-	err = h.Repo.Delete(id)
+	err = h.Service.DeleteAntrian(c.Request.Context(), id)
 	if err != nil {
-		if err == repository.ErrNotFound {
+		if errors.Is(err, repository.ErrNotFound) {
 			utils.ErrorResponse(c, http.StatusNotFound, "data not found", nil)
 			return
 		}
