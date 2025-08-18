@@ -39,6 +39,10 @@ func New(app *config.Application) *gin.Engine {
 	icdService := service.NewIcdService(icdRepo)
 	icdHandler := handler.NewIcdHandler(icdService)
 
+	pemeriksaanRepo := repository.NewPemeriksaanRepository(db)
+	pemeriksaanService := service.NewPemeriksaanService(pemeriksaanRepo, antrianRepo)
+	pemeriksaanHandler := handler.NewPemeriksaanHandler(pemeriksaanService)
+
 	// public
 	router.POST("/login/petugas", petugasHandler.Login)
 
@@ -51,6 +55,7 @@ func New(app *config.Application) *gin.Engine {
 		PasienRoutes(authRoutes, pasienHandler)
 		AntrianRoutes(authRoutes, antrianHandler)
 		IcdRoutes(authRoutes, icdHandler)
+		PemeriksaanRoutes(authRoutes, pemeriksaanHandler)
 	}
 
 	return router
