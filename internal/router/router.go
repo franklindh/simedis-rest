@@ -43,6 +43,10 @@ func New(app *config.Application) *gin.Engine {
 	pemeriksaanService := service.NewPemeriksaanService(pemeriksaanRepo, antrianRepo)
 	pemeriksaanHandler := handler.NewPemeriksaanHandler(pemeriksaanService)
 
+	laporanRepo := repository.NewLaporanRepository(db)
+	laporanService := service.NewLaporanService(laporanRepo)
+	laporanHandler := handler.NewLaporanHandler(laporanService)
+
 	// public
 	router.POST("/login/petugas", petugasHandler.Login)
 
@@ -56,6 +60,7 @@ func New(app *config.Application) *gin.Engine {
 		AntrianRoutes(authRoutes, antrianHandler)
 		IcdRoutes(authRoutes, icdHandler)
 		PemeriksaanRoutes(authRoutes, pemeriksaanHandler)
+		LaporanRoutes(authRoutes, laporanHandler)
 	}
 
 	return router
