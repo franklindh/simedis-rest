@@ -26,3 +26,19 @@ func (r *LaporanRepository) GetLaporanKunjunganPerPoli(startDate, endDate string
 
 	return results, err
 }
+
+func (r *LaporanRepository) GetLaporanPenyakitTeratas(startDate, endDate string, limit int) ([]model.LaporanPenyakitTeratas, error) {
+	var results []model.LaporanPenyakitTeratas
+
+	err := r.DB.Table("pemeriksaan").
+		Select("icd.kode_icd, icd.nama_penyakit, count(pemeriksaan.id_pemeriksaan) as jumlah_kasus").
+		Joins("join icd on pemeriksaan.id_icd = icd.id_icd").
+		Where("pemeriksaan.tanggal_pemeriksaan BETWEEN ? AND ?", startDate, endDate).
+		Where("pemeriksaan.id_icd IS NOT NULL").
+		Group("icd.kode_icd, icd.nama_penyakit").
+		Order("jumlah_kasus DESC").
+		Limit(limit).
+		Scan(&results).Error
+
+	return results, err
+}

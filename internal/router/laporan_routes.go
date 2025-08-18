@@ -9,5 +9,6 @@ func LaporanRoutes(rg *gin.RouterGroup, h *handler.LaporanHandler) {
 	laporanRoutes := rg.Group("/laporan")
 	{
 		laporanRoutes.GET("/kunjungan-poli", h.GetKunjunganPoli)
+		laporanRoutes.GET("/penyakit-teratas", h.GetPenyakitTeratas)
 	}
 }
