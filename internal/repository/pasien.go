@@ -40,10 +40,10 @@ func (r *PasienRepository) GetAll(params ParamsGetAllPasien) ([]model.Pasien, pa
 		db = db.Where("nama_pasien ILIKE ?", "%"+params.NameFilter+"%")
 	}
 	if params.NIKFilter != "" {
-		db = db.Where("nik = ?", params.NIKFilter)
+		db = db.Where("nik ILIKE ?", "%"+params.NIKFilter+"%")
 	}
 	if params.NoRekamMedis != "" {
-		db = db.Where("no_rekam_medis = ?", params.NoRekamMedis)
+		db = db.Where("no_rekam_medis ILIKE ?", "%"+params.NoRekamMedis+"%")
 	}
 
 	if err := db.Count(&totalRecords).Error; err != nil {
@@ -52,7 +52,16 @@ func (r *PasienRepository) GetAll(params ParamsGetAllPasien) ([]model.Pasien, pa
 
 	metadata := pagination.CalculateMetadata(int(totalRecords), params.Page, params.PageSize)
 
-	db = db.Order("nama_pasien ASC")
+	sortWhiteList := map[string]string{
+		"nama_asc":  "nama_pasien ASC",
+		"nama_desc": "nama_pasien DESC",
+	}
+
+	orderByClause := "nama_pasien ASC"
+	if sort, ok := sortWhiteList[params.SortBy]; ok {
+		orderByClause = sort
+	}
+	db = db.Order(orderByClause)
 
 	db = db.Limit(metadata.PageSize).Offset((metadata.CurrentPage - 1) * metadata.PageSize)
 
@@ -75,7 +84,7 @@ func (r *PasienRepository) GetByID(id int) (model.Pasien, error) {
 }
 
 func (r *PasienRepository) Update(id int, pasien model.Pasien) (model.Pasien, error) {
-	pasien.ID = id
+
 	result := r.DB.Model(&model.Pasien{}).Where("id_pasien = ?", id).Updates(&pasien)
 	if result.Error != nil {
 		return model.Pasien{}, result.Error
@@ -92,4 +101,18 @@ func (r *PasienRepository) Delete(id int) error {
 		return ErrNotFound
 	}
 	return result.Error
+}
+
+func (r *PasienRepository) GetLastID() (int, error) {
+	var lastID int
+
+	result := r.DB.Model(&model.Pasien{}).Select("id_pasien").Order("id_pasien DESC").Limit(1).Scan(&lastID)
+	if result.Error != nil {
+
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return 0, nil
+		}
+		return 0, result.Error
+	}
+	return lastID, nil
 }

@@ -1,37 +1,36 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
-
 	"strconv"
 
 	"github.com/franklindh/simedis-api/internal/model"
 	"github.com/franklindh/simedis-api/internal/repository"
 	"github.com/franklindh/simedis-api/pkg/utils"
+	"github.com/franklindh/simedis-api/service"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type PasienHandler struct {
-	Repo *repository.PasienRepository
+	Service *service.PasienService
 }
 
-func NewPasienHandler(repo *repository.PasienRepository) *PasienHandler {
-	return &PasienHandler{Repo: repo}
+func NewPasienHandler(svc *service.PasienService) *PasienHandler {
+	return &PasienHandler{Service: svc}
 }
 
 func (h *PasienHandler) Create(c *gin.Context) {
-	var newPasien model.Pasien
-	if err := c.ShouldBindJSON(&newPasien); err != nil {
-		errorMessage := utils.FormatValidationError(err)
-		utils.ErrorResponse(c, http.StatusBadRequest, errorMessage, err)
+	var req model.CreatePasienRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, utils.FormatValidationError(err), err)
 		return
 	}
 
-	createdPasien, err := h.Repo.Create(newPasien)
+	createdPasien, err := h.Service.CreatePasien(c.Request.Context(), req)
 	if err != nil {
-		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-			utils.ErrorResponse(c, http.StatusConflict, "data already exists", nil)
+		if errors.Is(err, service.ErrPasienConflict) {
+			utils.ErrorResponse(c, http.StatusConflict, err.Error(), nil)
 			return
 		}
 		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to create data", err)
@@ -43,29 +42,18 @@ func (h *PasienHandler) Create(c *gin.Context) {
 
 func (h *PasienHandler) GetAll(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
-	sort := c.DefaultQuery("sort", "nama_pasien_asc")
-	nameFilter := c.Query("name")
-	nikFilter := c.Query("nik")
-	noRekamMedis := c.Query("no_rekam_medis")
-
-	if page <= 0 {
-		page = 1
-	}
-	if pageSize <= 0 {
-		pageSize = 5
-	}
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "5"))
 
 	params := repository.ParamsGetAllPasien{
-		NameFilter:   nameFilter,
-		NIKFilter:    nikFilter,
-		NoRekamMedis: noRekamMedis,
-		SortBy:       sort,
 		Page:         page,
 		PageSize:     pageSize,
+		SortBy:       c.DefaultQuery("sort", "nama_pasien_asc"),
+		NameFilter:   c.Query("name"),
+		NIKFilter:    c.Query("nik"),
+		NoRekamMedis: c.Query("no_rekam_medis"),
 	}
 
-	allPasien, metadata, err := h.Repo.GetAll(params)
+	allPasien, metadata, err := h.Service.GetAllPasien(c.Request.Context(), params)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to retrieve data", err)
 		return
@@ -79,16 +67,15 @@ func (h *PasienHandler) GetAll(c *gin.Context) {
 }
 
 func (h *PasienHandler) GetByID(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, "invalid id format", err)
 		return
 	}
 
-	pasien, err := h.Repo.GetByID(id)
+	pasien, err := h.Service.GetPasienByID(c.Request.Context(), id)
 	if err != nil {
-		if err == repository.ErrNotFound {
+		if errors.Is(err, repository.ErrNotFound) {
 			utils.ErrorResponse(c, http.StatusNotFound, "data not found", nil)
 			return
 		}
@@ -100,28 +87,26 @@ func (h *PasienHandler) GetByID(c *gin.Context) {
 }
 
 func (h *PasienHandler) Update(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, "invalid id format", err)
 		return
 	}
 
-	var updatedPasien model.Pasien
-	if err := c.ShouldBindJSON(&updatedPasien); err != nil {
-		errorMessage := utils.FormatValidationError(err)
-		utils.ErrorResponse(c, http.StatusBadRequest, errorMessage, err)
+	var req model.UpdatePasienRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, utils.FormatValidationError(err), err)
 		return
 	}
 
-	result, err := h.Repo.Update(id, updatedPasien)
+	result, err := h.Service.UpdatePasien(c.Request.Context(), id, req)
 	if err != nil {
-		if err == repository.ErrNotFound {
+		if errors.Is(err, repository.ErrNotFound) {
 			utils.ErrorResponse(c, http.StatusNotFound, "data not found", nil)
 			return
 		}
-		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-			utils.ErrorResponse(c, http.StatusConflict, "data already exists", nil)
+		if errors.Is(err, service.ErrPasienConflict) {
+			utils.ErrorResponse(c, http.StatusConflict, err.Error(), nil)
 			return
 		}
 		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to update data", err)
@@ -132,20 +117,19 @@ func (h *PasienHandler) Update(c *gin.Context) {
 }
 
 func (h *PasienHandler) Delete(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, "invalid id format", err)
 		return
 	}
 
-	err = h.Repo.Delete(id)
+	err = h.Service.DeletePasien(c.Request.Context(), id)
 	if err != nil {
-		if err == repository.ErrNotFound {
+		if errors.Is(err, repository.ErrNotFound) {
 			utils.ErrorResponse(c, http.StatusNotFound, "data not found", nil)
 			return
 		}
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete data", err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to delete data", err)
 		return
 	}
 
