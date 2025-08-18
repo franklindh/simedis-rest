@@ -28,7 +28,8 @@ func New(app *config.Application) *gin.Engine {
 	jadwalHandler := handler.NewJadwalHandler(jadwalService)
 
 	pasienRepo := repository.NewPasienRepository(db)
-	pasienHandler := handler.NewPasienHandler(pasienRepo)
+	pasienService := service.NewPasienService(pasienRepo)
+	pasienHandler := handler.NewPasienHandler(pasienService)
 
 	antrianRepo := repository.NewAntrianRepository(db)
 	antrianHandler := handler.NewAntrianHandler(antrianRepo)
