@@ -21,24 +21,20 @@ func NewPoliHandler(svc *service.PoliService) *PoliHandler {
 }
 
 func (h *PoliHandler) Create(c *gin.Context) {
-	var newPoli model.Poli
-	if err := c.ShouldBindJSON(&newPoli); err != nil {
+	var req model.CreatePoliRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, utils.FormatValidationError(err), err)
 		return
 	}
 
-	createdPoli, err := h.Service.CreateOrRestorePoli(c.Request.Context(), newPoli)
+	createdPoli, err := h.Service.CreatePoli(c.Request.Context(), req)
 	if err != nil {
-		switch {
-		case errors.Is(err, service.ErrPoliConflict):
+
+		if errors.Is(err, service.ErrPoliConflict) {
 			utils.ErrorResponse(c, http.StatusConflict, err.Error(), nil)
-		case errors.Is(err, service.ErrPoliRestored):
-
-			utils.SuccessResponse(c, http.StatusOK, createdPoli, err.Error())
-		default:
-
-			utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to create data", err)
+			return
 		}
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to create data", err)
 		return
 	}
 
@@ -86,13 +82,13 @@ func (h *PoliHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var updatedPoli model.Poli
-	if err := c.ShouldBindJSON(&updatedPoli); err != nil {
+	var req model.UpdatePoliRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, utils.FormatValidationError(err), err)
 		return
 	}
 
-	result, err := h.Service.UpdatePoli(c.Request.Context(), id, updatedPoli)
+	result, err := h.Service.UpdatePoli(c.Request.Context(), id, req)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrNotFound):
