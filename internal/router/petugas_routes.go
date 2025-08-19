@@ -12,12 +12,12 @@ func PetugasRoutes(rg *gin.RouterGroup, h *handler.PetugasHandler) {
 		petugasRoutes.GET("", h.GetAll)
 		petugasRoutes.GET("/:id", h.GetByID)
 
-		adminOnly := petugasRoutes.Group("")
-		adminOnly.Use(middleware.Authorize("Administrasi"))
+		user := petugasRoutes.Group("")
+		user.Use(middleware.Authorize("Administrasi"))
 		{
-			adminOnly.POST("", h.Create)
-			adminOnly.PUT("/:id", h.Update)
-			adminOnly.DELETE("/:id", h.Delete)
+			user.POST("", h.Create)
+			user.PUT("/:id", h.Update)
+			user.DELETE("/:id", h.Delete)
 		}
 	}
 }
