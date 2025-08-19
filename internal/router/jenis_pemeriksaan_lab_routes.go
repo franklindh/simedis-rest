@@ -11,14 +11,13 @@ func JenisPemeriksaanLabRoutes(rg *gin.RouterGroup, h *handler.JenisPemeriksaanL
 	{
 		jenisPemeriksaanLab.GET("", h.GetAll)
 		jenisPemeriksaanLab.GET("/:id", h.GetByID)
-		jenisPemeriksaanLab.POST("", h.Create)
-		jenisPemeriksaanLab.PUT("/:id", h.Update)
-		jenisPemeriksaanLab.DELETE("/:id", h.Delete)
 
 		user := jenisPemeriksaanLab.Group("")
-		user.Use(middleware.Authorize("Administrasi"))
+		user.Use(middleware.Authorize("Administrasi", "Lab"))
 		{
-
+			user.POST("", h.Create)
+			user.PUT("/:id", h.Update)
+			user.DELETE("/:id", h.Delete)
 		}
 	}
 }

@@ -51,6 +51,10 @@ func New(app *config.Application) *gin.Engine {
 	jenisPemeriksaanLabService := service.NewJenisPemeriksaanLabService(jenisPemeriksaanLabRepo)
 	jenisPemeriksaanLabHandler := handler.NewJenisPemeriksaanLabHandler(jenisPemeriksaanLabService)
 
+	pemeriksaanLabRepo := repository.NewPemeriksaanLabRepository(db)
+	pemeriksaanLabService := service.NewPemeriksaanLabService(pemeriksaanLabRepo)
+	pemeriksaanLabHandler := handler.NewPemeriksaanLabHandler(pemeriksaanLabService)
+
 	// public
 	router.POST("/login/petugas", petugasHandler.Login)
 
@@ -66,6 +70,7 @@ func New(app *config.Application) *gin.Engine {
 		PemeriksaanRoutes(authRoutes, pemeriksaanHandler)
 		LaporanRoutes(authRoutes, laporanHandler)
 		JenisPemeriksaanLabRoutes(authRoutes, jenisPemeriksaanLabHandler)
+		PemeriksaanLabRoutes(authRoutes, pemeriksaanLabHandler)
 	}
 
 	return router
