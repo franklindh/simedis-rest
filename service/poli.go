@@ -12,14 +12,13 @@ import (
 
 var (
 	ErrPoliConflict = errors.New("data with that name already exists")
-	ErrPoliRestored = errors.New("data restored successfully")
 )
 
 type PoliService struct {
-	repo *repository.PoliRepository
+	repo repository.PoliRepositoryInterface
 }
 
-func NewPoliService(repo *repository.PoliRepository) *PoliService {
+func NewPoliService(repo repository.PoliRepositoryInterface) *PoliService {
 	return &PoliService{repo: repo}
 }
 

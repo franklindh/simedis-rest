@@ -10,11 +10,20 @@ import (
 
 var ErrNotFound = errors.New("data not found")
 
+type PoliRepositoryInterface interface {
+	Create(poli model.Poli) (model.Poli, error)
+	GetAll() ([]model.Poli, error)
+	GetByID(id int) (model.Poli, error)
+	Update(id int, poli model.Poli) (model.Poli, error)
+	Delete(id int) error
+	FindByName(name string) (model.Poli, error)
+}
+
 type PoliRepository struct {
 	DB *gorm.DB
 }
 
-func NewPoliRepository(db *gorm.DB) *PoliRepository {
+func NewPoliRepository(db *gorm.DB) PoliRepositoryInterface {
 	return &PoliRepository{DB: db}
 }
 
@@ -82,18 +91,18 @@ func (r *PoliRepository) FindByNameIncludingDeleted(nama string) (model.Poli, er
 	return poli, nil
 }
 
-func (r *PoliRepository) Restore(id int) (model.Poli, error) {
+// func (r *PoliRepository) Restore(id int) (model.Poli, error) {
 
-	result := r.DB.Model(&model.Poli{}).Unscoped().Where("id_poli = ?", id).Update("deleted_at", nil)
-	if result.Error != nil {
-		return model.Poli{}, result.Error
-	}
-	if result.RowsAffected == 0 {
-		return model.Poli{}, ErrNotFound
-	}
+// 	result := r.DB.Model(&model.Poli{}).Unscoped().Where("id_poli = ?", id).Update("deleted_at", nil)
+// 	if result.Error != nil {
+// 		return model.Poli{}, result.Error
+// 	}
+// 	if result.RowsAffected == 0 {
+// 		return model.Poli{}, ErrNotFound
+// 	}
 
-	return r.GetByID(id)
-}
+// 	return r.GetByID(id)
+// }
 
 func (r *PoliRepository) FindByName(name string) (model.Poli, error) {
 	var poli model.Poli

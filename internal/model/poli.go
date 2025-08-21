@@ -28,3 +28,17 @@ type UpdatePoliRequest struct {
 	Name   string `json:"name" binding:"required,min=3,max=50"`
 	Status string `json:"status" binding:"required,oneof=aktif nonaktif"`
 }
+
+func (req *CreatePoliRequest) ToModel() Poli {
+	return Poli{
+		Nama:   req.Name,
+		Status: req.Status,
+	}
+}
+
+func (req *UpdatePoliRequest) ToModel() Poli {
+	return Poli{
+		Nama:   req.Name,
+		Status: req.Status,
+	}
+}
