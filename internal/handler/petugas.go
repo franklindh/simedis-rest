@@ -21,7 +21,7 @@ func NewPetugasHandler(svc *service.PetugasService) *PetugasHandler {
 }
 
 func (h *PetugasHandler) Create(c *gin.Context) {
-	var newPetugas model.Petugas
+	var newPetugas model.CreatePetugasRequest
 	if err := c.ShouldBindJSON(&newPetugas); err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, utils.FormatValidationError(err), err)
 		return
@@ -97,7 +97,7 @@ func (h *PetugasHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var updatedPetugas model.Petugas
+	var updatedPetugas model.UpdatePetugasRequest
 	if err := c.ShouldBindJSON(&updatedPetugas); err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, utils.FormatValidationError(err), err)
 		return
@@ -140,17 +140,14 @@ func (h *PetugasHandler) Delete(c *gin.Context) {
 }
 
 func (h *PetugasHandler) Login(c *gin.Context) {
-	var loginData struct {
-		Username string `json:"username" binding:"required"`
-		Password string `json:"password" binding:"required"`
-	}
+	var req model.LoginPetugasRequest
 
-	if err := c.ShouldBindJSON(&loginData); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, "username and password are required", err)
 		return
 	}
 
-	token, err := h.Service.Login(c.Request.Context(), loginData.Username, loginData.Password)
+	token, err := h.Service.Login(c.Request.Context(), req)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidCredentials) {
 			utils.ErrorResponse(c, http.StatusUnauthorized, err.Error(), nil)

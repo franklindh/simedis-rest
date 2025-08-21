@@ -39,7 +39,7 @@ func FormatValidationError(err error) string {
 	return err.Error()
 }
 
-func ValidatePetugasUsername(petugas model.Petugas) error {
+func ValidatePetugasUsername(petugas model.CreatePetugasRequest) error {
 	if petugas.Username == "" || petugas.Nama == "" {
 		return errors.New("username and name are required fields")
 	}

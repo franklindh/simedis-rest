@@ -8,6 +8,15 @@ import (
 	"gorm.io/gorm"
 )
 
+type PetugasRepository interface {
+	Create(petugas model.Petugas) (model.Petugas, error)
+	GetAll(params ParamsGetAllPetugas) ([]model.Petugas, pagination.Metadata, error)
+	GetByID(id int) (model.Petugas, error)
+	GetByUsername(username string) (model.Petugas, error)
+	Update(id int, petugas model.Petugas) (model.Petugas, error)
+	Delete(id int) error
+}
+
 type ParamsGetAllPetugas struct {
 	NameOrUsernameFilter string
 	RoleFilter           string
@@ -17,15 +26,15 @@ type ParamsGetAllPetugas struct {
 	PageSize             int
 }
 
-type PetugasRepository struct {
+type petugasRepository struct {
 	DB *gorm.DB
 }
 
-func NewPetugasRepository(db *gorm.DB) *PetugasRepository {
-	return &PetugasRepository{DB: db}
+func NewPetugasRepository(db *gorm.DB) *petugasRepository {
+	return &petugasRepository{DB: db}
 }
 
-func (r *PetugasRepository) GetAll(params ParamsGetAllPetugas) ([]model.Petugas, pagination.Metadata, error) {
+func (r *petugasRepository) GetAll(params ParamsGetAllPetugas) ([]model.Petugas, pagination.Metadata, error) {
 	var petugas []model.Petugas
 	var totalRecords int64
 
@@ -67,7 +76,7 @@ func (r *PetugasRepository) GetAll(params ParamsGetAllPetugas) ([]model.Petugas,
 	return petugas, metadata, nil
 }
 
-func (r *PetugasRepository) GetByID(id int) (model.Petugas, error) {
+func (r *petugasRepository) GetById(id int) (model.Petugas, error) {
 	var petugas model.Petugas
 	result := r.DB.First(&petugas, id)
 	if result.Error != nil {
@@ -79,7 +88,7 @@ func (r *PetugasRepository) GetByID(id int) (model.Petugas, error) {
 	return petugas, nil
 }
 
-func (r *PetugasRepository) GetByUsername(username string) (model.Petugas, error) {
+func (r *petugasRepository) GetByUsername(username string) (model.Petugas, error) {
 	var petugas model.Petugas
 	result := r.DB.Where("username_petugas = ?", username).First(&petugas)
 	if result.Error != nil {
@@ -91,12 +100,12 @@ func (r *PetugasRepository) GetByUsername(username string) (model.Petugas, error
 	return petugas, nil
 }
 
-func (r *PetugasRepository) Create(petugas model.Petugas) (model.Petugas, error) {
+func (r *petugasRepository) Create(petugas model.Petugas) (model.Petugas, error) {
 	result := r.DB.Create(&petugas)
 	return petugas, result.Error
 }
 
-func (r *PetugasRepository) Update(id int, petugas model.Petugas) (model.Petugas, error) {
+func (r *petugasRepository) Update(id int, petugas model.Petugas) (model.Petugas, error) {
 	petugas.ID = id
 
 	result := r.DB.Model(&model.Petugas{}).Where("id_petugas = ?", id).Updates(&petugas)
@@ -106,10 +115,10 @@ func (r *PetugasRepository) Update(id int, petugas model.Petugas) (model.Petugas
 	if result.RowsAffected == 0 {
 		return model.Petugas{}, errors.New("data not found")
 	}
-	return r.GetByID(id)
+	return r.GetById(id)
 }
 
-func (r *PetugasRepository) Delete(id int) error {
+func (r *petugasRepository) Delete(id int) error {
 	result := r.DB.Delete(&model.Petugas{}, id)
 	if result.Error != nil {
 		return result.Error
