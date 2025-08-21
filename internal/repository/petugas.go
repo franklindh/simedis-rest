@@ -8,15 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type PetugasRepository interface {
-	Create(petugas model.Petugas) (model.Petugas, error)
-	GetAll(params ParamsGetAllPetugas) ([]model.Petugas, pagination.Metadata, error)
-	GetByID(id int) (model.Petugas, error)
-	GetByUsername(username string) (model.Petugas, error)
-	Update(id int, petugas model.Petugas) (model.Petugas, error)
-	Delete(id int) error
-}
-
 type ParamsGetAllPetugas struct {
 	NameOrUsernameFilter string
 	RoleFilter           string

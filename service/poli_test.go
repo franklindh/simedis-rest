@@ -16,7 +16,7 @@ type MockPoliRepository struct {
 	mock.Mock
 }
 
-var _ repository.PoliRepositoryInterface = (*MockPoliRepository)(nil)
+var _ PoliRepository = (*MockPoliRepository)(nil)
 
 func (m *MockPoliRepository) Create(poli model.Poli) (model.Poli, error) {
 	args := m.Called(poli)
@@ -28,7 +28,7 @@ func (m *MockPoliRepository) GetAll() ([]model.Poli, error) {
 	return args.Get(0).([]model.Poli), args.Error(1)
 }
 
-func (m *MockPoliRepository) GetByID(id int) (model.Poli, error) {
+func (m *MockPoliRepository) GetById(id int) (model.Poli, error) {
 	args := m.Called(id)
 	return args.Get(0).(model.Poli), args.Error(1)
 }
@@ -91,13 +91,16 @@ func TestPoliService_CreatePoli(t *testing.T) {
 			tc.setupMock(mockRepo, poliModel)
 
 			poliService := NewPoliService(mockRepo)
-			_, err := poliService.CreatePoli(context.Background(), tc.inputDTO)
+			result, err := poliService.CreatePoli(context.Background(), tc.inputDTO)
 
 			if tc.expectedError != nil {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tc.expectedError.Error())
 			} else {
 				assert.NoError(t, err)
+				assert.NotNil(t, result)
+				assert.Equal(t, 1, result.ID)
+				assert.Equal(t, tc.inputDTO.Name, result.Nama)
 			}
 			mockRepo.AssertExpectations(t)
 		})
@@ -154,6 +157,9 @@ func TestPoliService_GetAllPolis(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Len(t, result, tc.expectedCount)
+				if tc.expectedCount > 0 {
+					assert.Equal(t, "Poli Gigi", result[0].Nama)
+				}
 			}
 			mockRepo.AssertExpectations(t)
 		})
@@ -172,7 +178,7 @@ func TestPoliService_GetPoliByID(t *testing.T) {
 			inputID: 1,
 			setupMock: func(mockRepo *MockPoliRepository) {
 				expectedPoli := model.Poli{ID: 1, Nama: "Poli Umum", Status: "aktif"}
-				mockRepo.On("GetByID", 1).Return(expectedPoli, nil).Once()
+				mockRepo.On("GetById", 1).Return(expectedPoli, nil).Once()
 			},
 			expectedError: nil,
 		},
@@ -180,7 +186,7 @@ func TestPoliService_GetPoliByID(t *testing.T) {
 			name:    "Fail: Poli not found",
 			inputID: 99,
 			setupMock: func(mockRepo *MockPoliRepository) {
-				mockRepo.On("GetByID", 99).Return(model.Poli{}, repository.ErrNotFound).Once()
+				mockRepo.On("GetById", 99).Return(model.Poli{}, repository.ErrNotFound).Once()
 			},
 			expectedError: repository.ErrNotFound,
 		},
@@ -192,13 +198,16 @@ func TestPoliService_GetPoliByID(t *testing.T) {
 			tc.setupMock(mockRepo)
 			poliService := NewPoliService(mockRepo)
 
-			_, err := poliService.GetPoliByID(context.Background(), tc.inputID)
+			result, err := poliService.GetPoliByID(context.Background(), tc.inputID)
 
 			if tc.expectedError != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tc.expectedError))
 			} else {
 				assert.NoError(t, err)
+				assert.NotNil(t, result)
+				assert.Equal(t, tc.inputID, result.ID)
+				assert.Equal(t, "Poli Umum", result.Nama)
 			}
 			mockRepo.AssertExpectations(t)
 		})
@@ -254,13 +263,15 @@ func TestPoliService_UpdatePoli(t *testing.T) {
 			tc.setupMock(mockRepo)
 			poliService := NewPoliService(mockRepo)
 
-			_, err := poliService.UpdatePoli(context.Background(), tc.inputID, tc.inputDTO)
+			result, err := poliService.UpdatePoli(context.Background(), tc.inputID, tc.inputDTO)
 
 			if tc.expectedError != nil {
 				assert.Error(t, err)
 				assert.True(t, errors.Is(err, tc.expectedError))
 			} else {
 				assert.NoError(t, err)
+				assert.NotNil(t, result)
+				assert.Equal(t, tc.inputDTO.Name, result.Nama)
 			}
 			mockRepo.AssertExpectations(t)
 		})
