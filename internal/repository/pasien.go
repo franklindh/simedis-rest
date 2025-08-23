@@ -71,7 +71,7 @@ func (r *PasienRepository) GetAll(params ParamsGetAllPasien) ([]model.Pasien, pa
 	return pasien, metadata, nil
 }
 
-func (r *PasienRepository) GetByID(id int) (model.Pasien, error) {
+func (r *PasienRepository) GetById(id int) (model.Pasien, error) {
 	var pasien model.Pasien
 	result := r.DB.First(&pasien, id)
 	if result.Error != nil {
@@ -92,7 +92,7 @@ func (r *PasienRepository) Update(id int, pasien model.Pasien) (model.Pasien, er
 	if result.RowsAffected == 0 {
 		return model.Pasien{}, ErrNotFound
 	}
-	return r.GetByID(id)
+	return r.GetById(id)
 }
 
 func (r *PasienRepository) Delete(id int) error {

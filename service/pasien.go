@@ -17,31 +17,40 @@ var (
 	ErrPasienConflict = errors.New("data with the same NIK, username, or nomor kartu jaminan already exists")
 )
 
-type PasienService struct {
-	repo *repository.PasienRepository
+type PasienRepository interface {
+	Create(pasien model.Pasien) (model.Pasien, error)
+	GetAll(params repository.ParamsGetAllPasien) ([]model.Pasien, pagination.Metadata, error)
+	GetById(id int) (model.Pasien, error)
+	Update(id int, pasien model.Pasien) (model.Pasien, error)
+	Delete(id int) error
+	GetLastID() (int, error)
 }
 
-func NewPasienService(repo *repository.PasienRepository) *PasienService {
+type PasienService struct {
+	repo PasienRepository
+}
+
+func NewPasienService(repo PasienRepository) *PasienService {
 	return &PasienService{repo: repo}
 }
 
-func (s *PasienService) CreatePasien(ctx context.Context, req model.CreatePasienRequest) (model.Pasien, error) {
-	var username, password string
+func (s *PasienService) CreatePasien(ctx context.Context, req model.CreatePasienRequest) (model.PasienResponse, error) {
 
+	var username, password string
 	if req.UsernamePasien == "" {
 		username = req.NIK
 	} else {
 		username = req.UsernamePasien
 	}
-
 	if req.Password == "" {
 		password = req.NIK
 	} else {
 		password = req.Password
 	}
+
 	hashedPassword, err := utils.HashPassword(password)
 	if err != nil {
-		return model.Pasien{}, fmt.Errorf("failed to hash password: %w", err)
+		return model.PasienResponse{}, fmt.Errorf("failed to hash password: %w", err)
 	}
 
 	lastID, _ := s.repo.GetLastID()
@@ -52,33 +61,43 @@ func (s *PasienService) CreatePasien(ctx context.Context, req model.CreatePasien
 	createdPasien, err := s.repo.Create(pasien)
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-			return model.Pasien{}, ErrPasienConflict
+			return model.PasienResponse{}, ErrPasienConflict
 		}
-		return model.Pasien{}, fmt.Errorf("failed to create patient: %w", err)
+		return model.PasienResponse{}, fmt.Errorf("failed to create patient: %w", err)
 	}
 
-	return createdPasien, nil
+	return model.ToPasienResponse(createdPasien), nil
 }
 
-func (s *PasienService) GetAllPasien(ctx context.Context, params repository.ParamsGetAllPasien) ([]model.Pasien, pagination.Metadata, error) {
-	return s.repo.GetAll(params)
+func (s *PasienService) GetAllPasien(ctx context.Context, params repository.ParamsGetAllPasien) ([]model.PasienResponse, pagination.Metadata, error) {
+	allPasien, metadata, err := s.repo.GetAll(params)
+	if err != nil {
+		return nil, metadata, fmt.Errorf("failed to get all pasien: %w", err)
+	}
+
+	return model.ToPasienResponseList(allPasien), metadata, nil
 }
 
-func (s *PasienService) GetPasienByID(ctx context.Context, id int) (model.Pasien, error) {
-	return s.repo.GetByID(id)
+func (s *PasienService) GetPasienByID(ctx context.Context, id int) (model.PasienResponse, error) {
+	pasien, err := s.repo.GetById(id)
+	if err != nil {
+		return model.PasienResponse{}, err
+	}
+	return model.ToPasienResponse(pasien), nil
 }
 
-func (s *PasienService) UpdatePasien(ctx context.Context, id int, req model.UpdatePasienRequest) (model.Pasien, error) {
+func (s *PasienService) UpdatePasien(ctx context.Context, id int, req model.UpdatePasienRequest) (model.PasienResponse, error) {
 	pasienUpdate := req.ToModel()
 
 	updatedPasien, err := s.repo.Update(id, pasienUpdate)
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-			return model.Pasien{}, ErrPasienConflict
+			return model.PasienResponse{}, ErrPasienConflict
 		}
-		return model.Pasien{}, err
+		return model.PasienResponse{}, err
 	}
-	return updatedPasien, nil
+
+	return model.ToPasienResponse(updatedPasien), nil
 }
 
 func (s *PasienService) DeletePasien(ctx context.Context, id int) error {

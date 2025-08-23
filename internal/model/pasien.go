@@ -15,7 +15,7 @@ type Pasien struct {
 	NamaPasien                string         `json:"nama_pasien" gorm:"column:nama_pasien"`
 	AlamatPasien              string         `json:"alamat_pasien" gorm:"column:alamat_pasien"`
 	TempatLahirPasien         string         `json:"tempat_lahir_pasien" gorm:"column:tempat_lahir_pasien"`
-	TanggalLahirPasien        string         `json:"tanggal_lahir_pasien" gorm:"column:tanggal_lahir_pasien"`
+	TanggalLahirPasien        time.Time      `json:"tanggal_lahir_pasien" gorm:"column:tanggal_lahir_pasien"`
 	JKPasien                  string         `json:"jk_pasien" gorm:"column:jk_pasien"`
 	StatusPernikahan          string         `json:"status_pernikahan" gorm:"column:status_pernikahan"`
 	NamaKeluargaTerdekat      sql.NullString `json:"nama_keluarga_terdekat" gorm:"column:nama_keluarga_terdekat"`
@@ -61,6 +61,7 @@ type UpdatePasienRequest struct {
 }
 
 func (req *CreatePasienRequest) ToModel(username, hashedPassword, noRekamMedis string) Pasien {
+	parsedDate, _ := time.Parse("2006-01-02", req.TanggalLahirPasien)
 	return Pasien{
 		NIK:                       req.NIK,
 		NoKartuJaminan:            sql.NullString{String: req.NoKartuJaminan, Valid: req.NoKartuJaminan != ""},
@@ -70,7 +71,7 @@ func (req *CreatePasienRequest) ToModel(username, hashedPassword, noRekamMedis s
 		NamaPasien:                req.NamaPasien,
 		AlamatPasien:              req.AlamatPasien,
 		TempatLahirPasien:         req.TempatLahirPasien,
-		TanggalLahirPasien:        req.TanggalLahirPasien,
+		TanggalLahirPasien:        parsedDate,
 		JKPasien:                  req.JKPasien,
 		StatusPernikahan:          req.StatusPernikahan,
 		NamaKeluargaTerdekat:      sql.NullString{String: req.NamaKeluargaTerdekat, Valid: req.NamaKeluargaTerdekat != ""},
@@ -80,6 +81,7 @@ func (req *CreatePasienRequest) ToModel(username, hashedPassword, noRekamMedis s
 }
 
 func (req *UpdatePasienRequest) ToModel() Pasien {
+	parsedDate, _ := time.Parse("2006-01-02", req.TanggalLahirPasien)
 	return Pasien{
 		NIK:                       req.NIK,
 		NoKartuJaminan:            sql.NullString{String: req.NoKartuJaminan, Valid: req.NoKartuJaminan != ""},
@@ -88,10 +90,56 @@ func (req *UpdatePasienRequest) ToModel() Pasien {
 		NamaPasien:                req.NamaPasien,
 		AlamatPasien:              req.AlamatPasien,
 		TempatLahirPasien:         req.TempatLahirPasien,
-		TanggalLahirPasien:        req.TanggalLahirPasien,
+		TanggalLahirPasien:        parsedDate,
 		JKPasien:                  req.JKPasien,
 		StatusPernikahan:          req.StatusPernikahan,
 		NamaKeluargaTerdekat:      sql.NullString{String: req.NamaKeluargaTerdekat, Valid: req.NamaKeluargaTerdekat != ""},
 		NoTeleponKeluargaTerdekat: sql.NullString{String: req.NoTeleponKeluargaTerdekat, Valid: req.NoTeleponKeluargaTerdekat != ""},
 	}
+}
+
+type PasienResponse struct {
+	ID                        int       `json:"id"`
+	NIK                       string    `json:"nik"`
+	NoRekamMedis              string    `json:"no_rekam_medis,omitempty"`
+	NoKartuJaminan            string    `json:"no_kartu_jaminan,omitempty"`
+	UsernamePasien            string    `json:"username_pasien"`
+	NoTeleponPasien           string    `json:"no_telepon_pasien,omitempty"`
+	NamaPasien                string    `json:"nama_pasien"`
+	AlamatPasien              string    `json:"alamat_pasien"`
+	TempatLahirPasien         string    `json:"tempat_lahir_pasien"`
+	TanggalLahirPasien        time.Time `json:"tanggal_lahir_pasien"`
+	JKPasien                  string    `json:"jk_pasien"`
+	StatusPernikahan          string    `json:"status_pernikahan"`
+	NamaKeluargaTerdekat      string    `json:"nama_keluarga_terdekat,omitempty"`
+	NoTeleponKeluargaTerdekat string    `json:"no_telepon_keluarga_terdekat,omitempty"`
+	CreatedAt                 time.Time `json:"created_at"`
+}
+
+func ToPasienResponse(p Pasien) PasienResponse {
+	return PasienResponse{
+		ID:                        p.ID,
+		NIK:                       p.NIK,
+		NoRekamMedis:              p.NoRekamMedis.String,
+		NoKartuJaminan:            p.NoKartuJaminan.String,
+		UsernamePasien:            p.UsernamePasien,
+		NoTeleponPasien:           p.NoTeleponPasien.String,
+		NamaPasien:                p.NamaPasien,
+		AlamatPasien:              p.AlamatPasien,
+		TempatLahirPasien:         p.TempatLahirPasien,
+		TanggalLahirPasien:        p.TanggalLahirPasien,
+		JKPasien:                  p.JKPasien,
+		StatusPernikahan:          p.StatusPernikahan,
+		NamaKeluargaTerdekat:      p.NamaKeluargaTerdekat.String,
+		NoTeleponKeluargaTerdekat: p.NoTeleponKeluargaTerdekat.String,
+		CreatedAt:                 p.CreatedAt,
+	}
+}
+
+func ToPasienResponseList(pasiens []Pasien) []PasienResponse {
+	var responses []PasienResponse
+	for _, p := range pasiens {
+		responses = append(responses, ToPasienResponse(p))
+	}
+	return responses
 }
