@@ -74,7 +74,7 @@ func (r *JadwalRepository) GetAll(params ParamsGetAllJadwal) ([]model.Jadwal, pa
 	return jadwal, metadata, nil
 }
 
-func (r *JadwalRepository) GetByID(id int) (model.Jadwal, error) {
+func (r *JadwalRepository) GetById(id int) (model.Jadwal, error) {
 	var jadwal model.Jadwal
 	result := r.DB.Preload("Petugas").Preload("Poli").First(&jadwal, id)
 	if result.Error != nil {
@@ -95,7 +95,7 @@ func (r *JadwalRepository) Update(id int, jadwal model.Jadwal) (model.Jadwal, er
 	if result.RowsAffected == 0 {
 		return model.Jadwal{}, ErrNotFound
 	}
-	return r.GetByID(id)
+	return r.GetById(id)
 }
 
 func (r *JadwalRepository) Delete(id int) error {

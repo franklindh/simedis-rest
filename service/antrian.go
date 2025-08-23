@@ -29,12 +29,16 @@ func NewAntrianService(repo *repository.AntrianRepository, jadwalRepo *repositor
 }
 
 func (s *AntrianService) CreateAntrian(ctx context.Context, req model.CreateAntrianRequest) (model.Antrian, error) {
-	jadwal, err := s.jadwalRepo.GetByID(req.JadwalID)
+	jadwal, err := s.jadwalRepo.GetById(req.JadwalID)
 	if err != nil {
 		return model.Antrian{}, ErrForeignKey
 	}
 
-	err = s.repo.CheckForOverlappingAntrian(req.PasienID, jadwal.Tanggal, jadwal.WaktuMulai, jadwal.WaktuSelesai)
+	tanggalString := jadwal.Tanggal.Format("2006-01-02")
+	waktuMulaiString := jadwal.WaktuMulai.Format("15:04")
+	waktuSelesaiString := jadwal.WaktuSelesai.Format("15:04")
+
+	err = s.repo.CheckForOverlappingAntrian(req.PasienID, tanggalString, waktuMulaiString, waktuSelesaiString)
 	if err == nil {
 		return model.Antrian{}, ErrScheduleOverlap
 	}
@@ -50,7 +54,7 @@ func (s *AntrianService) CreateAntrian(ctx context.Context, req model.CreateAntr
 		return model.Antrian{}, fmt.Errorf("error checking existing antrian: %w", err)
 	}
 
-	jadwal, err = s.jadwalRepo.GetByID(req.JadwalID)
+	jadwal, err = s.jadwalRepo.GetById(req.JadwalID)
 	if err != nil {
 		return model.Antrian{}, ErrForeignKey
 	}
@@ -101,7 +105,7 @@ func (s *AntrianService) GetAllAntrianDetails(ctx context.Context, params reposi
 				} `json:"dokter"`
 			}{
 				ID:      antrian.Jadwal.ID,
-				Tanggal: antrian.Jadwal.Tanggal,
+				Tanggal: antrian.Jadwal.Tanggal.Format("2006-01-02"),
 				Poli: struct {
 					Name string `json:"name"`
 				}{Name: antrian.Jadwal.Poli.Nama},
