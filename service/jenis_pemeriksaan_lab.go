@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 
@@ -15,54 +14,74 @@ var (
 	ErrJenisPemeriksaanConflict = errors.New("jenis pemeriksaan with that name already exists")
 )
 
-type JenisPemeriksaanLabService struct {
-	repo *repository.JenisPemeriksaanLabRepository
+type JenisPemeriksaanLabRepository interface {
+	Create(jenis model.JenisPemeriksaanLab) (model.JenisPemeriksaanLab, error)
+	GetAll() ([]model.JenisPemeriksaanLab, error)
+	GetById(id int) (model.JenisPemeriksaanLab, error)
+	Update(id int, jenis model.JenisPemeriksaanLab) (model.JenisPemeriksaanLab, error)
+	Delete(id int) error
+	FindByName(name string) (model.JenisPemeriksaanLab, error)
 }
 
-func NewJenisPemeriksaanLabService(repo *repository.JenisPemeriksaanLabRepository) *JenisPemeriksaanLabService {
+type JenisPemeriksaanLabService struct {
+	repo JenisPemeriksaanLabRepository
+}
+
+func NewJenisPemeriksaanLabService(repo JenisPemeriksaanLabRepository) *JenisPemeriksaanLabService {
 	return &JenisPemeriksaanLabService{repo: repo}
 }
 
-func (s *JenisPemeriksaanLabService) Create(ctx context.Context, req model.CreateJenisPemeriksaanLabRequest) (model.JenisPemeriksaanLab, error) {
-	jenis := model.JenisPemeriksaanLab{
-		NamaPemeriksaan: req.NamaPemeriksaan,
-		Satuan:          sql.NullString{String: req.Satuan, Valid: req.Satuan != ""},
-		NilaiRujukan:    sql.NullString{String: req.NilaiRujukan, Valid: req.NilaiRujukan != ""},
-		Kriteria:        sql.NullString{String: req.Kriteria, Valid: req.Kriteria != ""},
-	}
+func (s *JenisPemeriksaanLabService) Create(ctx context.Context, req model.CreateJenisPemeriksaanLabRequest) (model.JenisPemeriksaanLabResponse, error) {
+	jenis := req.ToModel()
+
 	created, err := s.repo.Create(jenis)
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-			return model.JenisPemeriksaanLab{}, ErrJenisPemeriksaanConflict
+			return model.JenisPemeriksaanLabResponse{}, ErrJenisPemeriksaanConflict
 		}
-		return model.JenisPemeriksaanLab{}, fmt.Errorf("failed to create jenis pemeriksaan: %w", err)
+		return model.JenisPemeriksaanLabResponse{}, fmt.Errorf("failed to create jenis pemeriksaan: %w", err)
 	}
-	return created, nil
+
+	return model.ToJenisPemeriksaanLabResponse(created), nil
 }
 
-func (s *JenisPemeriksaanLabService) GetAll(ctx context.Context) ([]model.JenisPemeriksaanLab, error) {
-	return s.repo.GetAll()
-}
-
-func (s *JenisPemeriksaanLabService) GetByID(ctx context.Context, id int) (model.JenisPemeriksaanLab, error) {
-	return s.repo.GetByID(id)
-}
-
-func (s *JenisPemeriksaanLabService) Update(ctx context.Context, id int, req model.UpdateJenisPemeriksaanLabRequest) (model.JenisPemeriksaanLab, error) {
-	jenis := model.JenisPemeriksaanLab{
-		NamaPemeriksaan: req.NamaPemeriksaan,
-		Satuan:          sql.NullString{String: req.Satuan, Valid: req.Satuan != ""},
-		NilaiRujukan:    sql.NullString{String: req.NilaiRujukan, Valid: req.NilaiRujukan != ""},
-		Kriteria:        sql.NullString{String: req.Kriteria, Valid: req.Kriteria != ""},
+func (s *JenisPemeriksaanLabService) GetAll(ctx context.Context) ([]model.JenisPemeriksaanLabResponse, error) {
+	list, err := s.repo.GetAll()
+	if err != nil {
+		return nil, err
 	}
+	return model.ToJenisPemeriksaanLabResponseList(list), nil
+}
+
+func (s *JenisPemeriksaanLabService) GetByID(ctx context.Context, id int) (model.JenisPemeriksaanLabResponse, error) {
+	jenis, err := s.repo.GetById(id)
+	if err != nil {
+		return model.JenisPemeriksaanLabResponse{}, err
+	}
+	return model.ToJenisPemeriksaanLabResponse(jenis), nil
+}
+
+func (s *JenisPemeriksaanLabService) Update(ctx context.Context, id int, req model.UpdateJenisPemeriksaanLabRequest) (model.JenisPemeriksaanLabResponse, error) {
+
+	existing, err := s.repo.FindByName(req.NamaPemeriksaan)
+	if err != nil && !errors.Is(err, repository.ErrNotFound) {
+		return model.JenisPemeriksaanLabResponse{}, fmt.Errorf("database error on check: %w", err)
+	}
+	if err == nil && existing.ID != id {
+		return model.JenisPemeriksaanLabResponse{}, ErrJenisPemeriksaanConflict
+	}
+
+	jenis := req.ToModel()
 	updated, err := s.repo.Update(id, jenis)
 	if err != nil {
+
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-			return model.JenisPemeriksaanLab{}, ErrJenisPemeriksaanConflict
+			return model.JenisPemeriksaanLabResponse{}, ErrJenisPemeriksaanConflict
 		}
-		return model.JenisPemeriksaanLab{}, err
+		return model.JenisPemeriksaanLabResponse{}, err
 	}
-	return updated, nil
+
+	return model.ToJenisPemeriksaanLabResponse(updated), nil
 }
 
 func (s *JenisPemeriksaanLabService) Delete(ctx context.Context, id int) error {
