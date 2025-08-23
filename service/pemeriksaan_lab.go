@@ -5,15 +5,22 @@ import (
 	"fmt"
 
 	"github.com/franklindh/simedis-api/internal/model"
-	"github.com/franklindh/simedis-api/internal/repository"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-type PemeriksaanLabService struct {
-	repo *repository.PemeriksaanLabRepository
+type PemeriksaanLabRepository interface {
+	Create(hasilLab model.PemeriksaanLab) (model.PemeriksaanLab, error)
+	GetAllByPemeriksaanID(pemeriksaanID int) ([]model.PemeriksaanLab, error)
+	GetById(id int) (model.PemeriksaanLab, error)
+	Update(id int, hasilLab model.PemeriksaanLab) (model.PemeriksaanLab, error)
+	Delete(id int) error
 }
 
-func NewPemeriksaanLabService(repo *repository.PemeriksaanLabRepository) *PemeriksaanLabService {
+type PemeriksaanLabService struct {
+	repo PemeriksaanLabRepository
+}
+
+func NewPemeriksaanLabService(repo PemeriksaanLabRepository) *PemeriksaanLabService {
 	return &PemeriksaanLabService{repo: repo}
 }
 

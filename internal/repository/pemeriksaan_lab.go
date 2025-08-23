@@ -20,7 +20,7 @@ func (r *PemeriksaanLabRepository) Create(hasilLab model.PemeriksaanLab) (model.
 	if result.Error != nil {
 		return model.PemeriksaanLab{}, result.Error
 	}
-	return r.GetByID(hasilLab.ID)
+	return r.GetById(hasilLab.ID)
 }
 
 func (r *PemeriksaanLabRepository) GetAllByPemeriksaanID(pemeriksaanID int) ([]model.PemeriksaanLab, error) {
@@ -29,7 +29,7 @@ func (r *PemeriksaanLabRepository) GetAllByPemeriksaanID(pemeriksaanID int) ([]m
 	return results, err
 }
 
-func (r *PemeriksaanLabRepository) GetByID(id int) (model.PemeriksaanLab, error) {
+func (r *PemeriksaanLabRepository) GetById(id int) (model.PemeriksaanLab, error) {
 	var hasilLab model.PemeriksaanLab
 	result := r.DB.Preload("JenisPemeriksaanLab").First(&hasilLab, id)
 	if result.Error != nil {
@@ -49,7 +49,7 @@ func (r *PemeriksaanLabRepository) Update(id int, hasilLab model.PemeriksaanLab)
 	if result.RowsAffected == 0 {
 		return model.PemeriksaanLab{}, ErrNotFound
 	}
-	return r.GetByID(id)
+	return r.GetById(id)
 }
 
 func (r *PemeriksaanLabRepository) Delete(id int) error {
