@@ -11,42 +11,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type MockPemeriksaanLabRepository struct {
-	mock.Mock
-}
-
-var _ PemeriksaanLabRepository = (*MockPemeriksaanLabRepository)(nil)
-
-func (m *MockPemeriksaanLabRepository) Create(hasilLab model.PemeriksaanLab) (model.PemeriksaanLab, error) {
-	args := m.Called(hasilLab)
-
-	if retFn, ok := args.Get(0).(func(model.PemeriksaanLab) model.PemeriksaanLab); ok {
-		return retFn(hasilLab), args.Error(1)
-	}
-
-	return args.Get(0).(model.PemeriksaanLab), args.Error(1)
-}
-func (m *MockPemeriksaanLabRepository) GetAllByPemeriksaanID(pemeriksaanID int) ([]model.PemeriksaanLab, error) {
-	args := m.Called(pemeriksaanID)
-
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]model.PemeriksaanLab), args.Error(1)
-}
-func (m *MockPemeriksaanLabRepository) GetById(id int) (model.PemeriksaanLab, error) {
-	args := m.Called(id)
-	return args.Get(0).(model.PemeriksaanLab), args.Error(1)
-}
-func (m *MockPemeriksaanLabRepository) Update(id int, hasilLab model.PemeriksaanLab) (model.PemeriksaanLab, error) {
-	args := m.Called(id, hasilLab)
-	return args.Get(0).(model.PemeriksaanLab), args.Error(1)
-}
-func (m *MockPemeriksaanLabRepository) Delete(id int) error {
-	args := m.Called(id)
-	return args.Error(0)
-}
-
 func TestPemeriksaanLabService_GetAllByPemeriksaanID(t *testing.T) {
 	mockRepo := new(MockPemeriksaanLabRepository)
 	service := NewPemeriksaanLabService(mockRepo)

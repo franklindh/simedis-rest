@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/franklindh/simedis-api/internal/model"
 	"github.com/franklindh/simedis-api/internal/repository"
@@ -16,128 +15,83 @@ import (
 var (
 	ErrForeignKey      = errors.New("invalid jadwal_id or pasien_id")
 	ErrAntrianExists   = errors.New("pasien sudah terdaftar di jadwal ini")
-	ErrScheduleOverlap = errors.New("pasien memiliki jadwal lain yang tumpang tindih pada waktu yang sama")
+	ErrScheduleOverlap = errors.New("pasien memiliki jadwal lain yang tumpang tindih")
 )
 
 type AntrianService struct {
-	repo       *repository.AntrianRepository
-	jadwalRepo *repository.JadwalRepository
+	repo       AntrianRepository
+	jadwalRepo JadwalRepository
 }
 
-func NewAntrianService(repo *repository.AntrianRepository, jadwalRepo *repository.JadwalRepository) *AntrianService {
+func NewAntrianService(repo AntrianRepository, jadwalRepo JadwalRepository) *AntrianService {
 	return &AntrianService{repo: repo, jadwalRepo: jadwalRepo}
 }
 
-func (s *AntrianService) CreateAntrian(ctx context.Context, req model.CreateAntrianRequest) (model.Antrian, error) {
+func (s *AntrianService) CreateAntrian(ctx context.Context, req model.CreateAntrianRequest) (model.AntrianResponse, error) {
+
 	jadwal, err := s.jadwalRepo.GetById(req.JadwalID)
 	if err != nil {
-		return model.Antrian{}, ErrForeignKey
+		return model.AntrianResponse{}, ErrForeignKey
 	}
 
-	tanggalString := jadwal.Tanggal.Format("2006-01-02")
-	waktuMulaiString := jadwal.WaktuMulai.Format("15:04")
-	waktuSelesaiString := jadwal.WaktuSelesai.Format("15:04")
-
-	err = s.repo.CheckForOverlappingAntrian(req.PasienID, tanggalString, waktuMulaiString, waktuSelesaiString)
-	if err == nil {
-		return model.Antrian{}, ErrScheduleOverlap
-	}
-	if !errors.Is(err, repository.ErrNotFound) {
-		return model.Antrian{}, fmt.Errorf("error checking for overlapping schedule: %w", err)
-	}
-
-	err = s.repo.CheckAntrian(req.PasienID, req.JadwalID)
-	if err == nil {
-		return model.Antrian{}, ErrAntrianExists
-	}
-	if !errors.Is(err, repository.ErrNotFound) {
-		return model.Antrian{}, fmt.Errorf("error checking existing antrian: %w", err)
-	}
-
-	jadwal, err = s.jadwalRepo.GetById(req.JadwalID)
+	isOverlap, err := s.repo.CheckForOverlappingAntrian(req.PasienID, jadwal.Tanggal, jadwal.WaktuMulai, jadwal.WaktuSelesai)
 	if err != nil {
-		return model.Antrian{}, ErrForeignKey
+		return model.AntrianResponse{}, fmt.Errorf("error checking for overlapping schedule: %w", err)
+	}
+	if isOverlap {
+		return model.AntrianResponse{}, ErrScheduleOverlap
 	}
 
+	isExist, err := s.repo.CheckAntrian(req.PasienID, req.JadwalID)
+	if err != nil {
+		return model.AntrianResponse{}, fmt.Errorf("error checking existing antrian: %w", err)
+	}
+	if isExist {
+		return model.AntrianResponse{}, ErrAntrianExists
+	}
+
+	count, err := s.repo.CountTodayByJadwal(req.JadwalID)
+	if err != nil {
+		return model.AntrianResponse{}, fmt.Errorf("error counting antrian for today's schedule: %w", err)
+	}
 	initial := strings.ToUpper(string(jadwal.Poli.Nama[0]))
-	nomorAntrian := fmt.Sprintf("%s%d", initial, (time.Now().Unix()%1000)+100)
+	nomorAntrian := fmt.Sprintf("%s%d", initial, count+1)
 
-	antrian := model.Antrian{
-		JadwalID:     req.JadwalID,
-		PasienID:     req.PasienID,
-		Prioritas:    req.Prioritas,
-		Status:       "Menunggu",
-		NomorAntrian: nomorAntrian,
-	}
-
+	antrian := req.ToModel(nomorAntrian)
 	createdAntrian, err := s.repo.Create(antrian)
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23503" {
-			return model.Antrian{}, ErrForeignKey
+			return model.AntrianResponse{}, ErrForeignKey
 		}
-		return model.Antrian{}, fmt.Errorf("failed to create antrian: %w", err)
+		return model.AntrianResponse{}, fmt.Errorf("failed to create antrian: %w", err)
 	}
 
-	return createdAntrian, nil
+	return model.ToAntrianResponse(createdAntrian), nil
 }
 
-func (s *AntrianService) GetAllAntrianDetails(ctx context.Context, params repository.ParamsGetAllAntrian) ([]model.AntrianDetail, pagination.Metadata, error) {
+func (s *AntrianService) GetAllAntrian(ctx context.Context, params repository.ParamsGetAllAntrian) ([]model.AntrianResponse, pagination.Metadata, error) {
 	allAntrian, metadata, err := s.repo.GetAll(params)
 	if err != nil {
-		return nil, pagination.Metadata{}, err
+		return nil, metadata, err
 	}
-
-	var responseData []model.AntrianDetail
-	for _, antrian := range allAntrian {
-		detail := model.AntrianDetail{
-			ID:           antrian.ID,
-			NomorAntrian: antrian.NomorAntrian,
-			Prioritas:    antrian.Prioritas,
-			Status:       antrian.Status,
-			Jadwal: struct {
-				ID      int    `json:"id"`
-				Tanggal string `json:"tanggal"`
-				Poli    struct {
-					Name string `json:"name"`
-				} `json:"poli"`
-				Dokter struct {
-					Name string `json:"name"`
-				} `json:"dokter"`
-			}{
-				ID:      antrian.Jadwal.ID,
-				Tanggal: antrian.Jadwal.Tanggal.Format("2006-01-02"),
-				Poli: struct {
-					Name string `json:"name"`
-				}{Name: antrian.Jadwal.Poli.Nama},
-				Dokter: struct {
-					Name string `json:"name"`
-				}{Name: antrian.Jadwal.Petugas.Nama},
-			},
-			Pasien: struct {
-				ID   int    `json:"id"`
-				Name string `json:"name"`
-			}{
-				ID:   antrian.Pasien.ID,
-				Name: antrian.Pasien.NamaPasien,
-			},
-		}
-		responseData = append(responseData, detail)
-	}
-
-	return responseData, metadata, nil
+	return model.ToAntrianResponseList(allAntrian), metadata, nil
 }
 
-func (s *AntrianService) GetAntrianByID(ctx context.Context, id int) (model.Antrian, error) {
-	return s.repo.GetByID(id)
+func (s *AntrianService) GetAntrianByID(ctx context.Context, id int) (model.AntrianResponse, error) {
+	antrian, err := s.repo.GetByID(id)
+	if err != nil {
+		return model.AntrianResponse{}, err
+	}
+	return model.ToAntrianResponse(antrian), nil
 }
 
-func (s *AntrianService) UpdateAntrian(ctx context.Context, id int, req model.UpdateAntrianRequest) (model.Antrian, error) {
-
-	antrianUpdate := model.Antrian{
-		Prioritas: req.Prioritas,
-		Status:    req.Status,
+func (s *AntrianService) UpdateAntrian(ctx context.Context, id int, req model.UpdateAntrianRequest) (model.AntrianResponse, error) {
+	antrianUpdate := req.ToModel()
+	updatedAntrian, err := s.repo.Update(id, antrianUpdate)
+	if err != nil {
+		return model.AntrianResponse{}, err
 	}
-	return s.repo.Update(id, antrianUpdate)
+	return model.ToAntrianResponse(updatedAntrian), nil
 }
 
 func (s *AntrianService) DeleteAntrian(ctx context.Context, id int) error {

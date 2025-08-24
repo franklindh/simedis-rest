@@ -19,15 +19,6 @@ var (
 	ErrInvalidCredentials = errors.New("invalid username or password")
 )
 
-type PetugasRepository interface {
-	GetByUsername(username string) (model.Petugas, error)
-	Create(petugas model.Petugas) (model.Petugas, error)
-	GetAll(params repository.ParamsGetAllPetugas) ([]model.Petugas, pagination.Metadata, error)
-	GetById(id int) (model.Petugas, error)
-	Update(id int, petugas model.Petugas) (model.Petugas, error)
-	Delete(id int) error
-}
-
 type PetugasService struct {
 	repo   PetugasRepository
 	config *config.Config

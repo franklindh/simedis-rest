@@ -17,14 +17,6 @@ var (
 	ErrWaktuSelesaiInvalid = errors.New("waktu_selesai must be after waktu_mulai")
 )
 
-type JadwalRepository interface {
-	Create(jadwal model.Jadwal) (model.Jadwal, error)
-	GetAll(params repository.ParamsGetAllJadwal) ([]model.Jadwal, pagination.Metadata, error)
-	GetById(id int) (model.Jadwal, error)
-	Update(id int, jadwal model.Jadwal) (model.Jadwal, error)
-	Delete(id int) error
-}
-
 type JadwalService struct {
 	repo JadwalRepository
 }

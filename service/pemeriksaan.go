@@ -13,20 +13,6 @@ var (
 	ErrPemeriksaanExists = errors.New("pemeriksaan for this antrian already exists")
 )
 
-type PemeriksaanRepository interface {
-	CheckExistingPemeriksaan(antrianID int) error
-	Create(pemeriksaan model.Pemeriksaan) (model.Pemeriksaan, error)
-	GetById(id int) (model.Pemeriksaan, error)
-	GetAllByPasienID(pasienID int) ([]model.Pemeriksaan, error)
-	Update(id int, pemeriksaan model.Pemeriksaan) (model.Pemeriksaan, error)
-	Delete(id int) error
-}
-
-type AntrianRepository interface {
-	GetByID(id int) (model.Antrian, error)
-	Update(id int, antrian model.Antrian) (model.Antrian, error)
-}
-
 type PemeriksaanService struct {
 	repo        PemeriksaanRepository
 	antrianRepo AntrianRepository

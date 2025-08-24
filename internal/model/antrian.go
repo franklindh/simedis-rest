@@ -21,10 +21,22 @@ type Antrian struct {
 	Pasien Pasien `json:"pasien" gorm:"foreignKey:PasienID"`
 }
 
+func (Antrian) TableName() string { return "antrian" }
+
 type CreateAntrianRequest struct {
 	JadwalID  int    `json:"jadwal_id" binding:"required,gt=0"`
 	PasienID  int    `json:"pasien_id" binding:"required,gt=0"`
 	Prioritas string `json:"prioritas" binding:"required,oneof=Gawat 'Non Gawat'"`
+}
+
+func (req *CreateAntrianRequest) ToModel(nomorAntrian string) Antrian {
+	return Antrian{
+		JadwalID:     req.JadwalID,
+		PasienID:     req.PasienID,
+		Prioritas:    req.Prioritas,
+		Status:       "Menunggu",
+		NomorAntrian: nomorAntrian,
+	}
 }
 
 type UpdateAntrianRequest struct {
@@ -32,7 +44,14 @@ type UpdateAntrianRequest struct {
 	Status    string `json:"status" binding:"required,oneof=Menunggu 'Menunggu Diagnosis' Selesai"`
 }
 
-type AntrianDetail struct {
+func (req *UpdateAntrianRequest) ToModel() Antrian {
+	return Antrian{
+		Prioritas: req.Prioritas,
+		Status:    req.Status,
+	}
+}
+
+type AntrianResponse struct {
 	ID           int    `json:"id"`
 	NomorAntrian string `json:"nomor_antrian"`
 	Prioritas    string `json:"prioritas"`
@@ -41,18 +60,57 @@ type AntrianDetail struct {
 		ID      int    `json:"id"`
 		Tanggal string `json:"tanggal"`
 		Poli    struct {
-			Name string `json:"name"`
+			Nama string `json:"nama"`
 		} `json:"poli"`
 		Dokter struct {
-			Name string `json:"name"`
+			Nama string `json:"nama"`
 		} `json:"dokter"`
 	} `json:"jadwal"`
 	Pasien struct {
 		ID   int    `json:"id"`
-		Name string `json:"name"`
+		Nama string `json:"nama"`
 	} `json:"pasien"`
 }
 
-func (Antrian) TableName() string {
-	return "antrian"
+func ToAntrianResponse(a Antrian) AntrianResponse {
+	return AntrianResponse{
+		ID:           a.ID,
+		NomorAntrian: a.NomorAntrian,
+		Prioritas:    a.Prioritas,
+		Status:       a.Status,
+		Jadwal: struct {
+			ID      int    `json:"id"`
+			Tanggal string `json:"tanggal"`
+			Poli    struct {
+				Nama string `json:"nama"`
+			} `json:"poli"`
+			Dokter struct {
+				Nama string `json:"nama"`
+			} `json:"dokter"`
+		}{
+			ID:      a.Jadwal.ID,
+			Tanggal: a.Jadwal.Tanggal.Format("2006-01-02"),
+			Poli: struct {
+				Nama string `json:"nama"`
+			}{Nama: a.Jadwal.Poli.Nama},
+			Dokter: struct {
+				Nama string `json:"nama"`
+			}{Nama: a.Jadwal.Petugas.Nama},
+		},
+		Pasien: struct {
+			ID   int    `json:"id"`
+			Nama string `json:"nama"`
+		}{
+			ID:   a.Pasien.ID,
+			Nama: a.Pasien.NamaPasien,
+		},
+	}
+}
+
+func ToAntrianResponseList(antrians []Antrian) []AntrianResponse {
+	var responses []AntrianResponse
+	for _, a := range antrians {
+		responses = append(responses, ToAntrianResponse(a))
+	}
+	return responses
 }

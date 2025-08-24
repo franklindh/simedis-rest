@@ -13,55 +13,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type MockPemeriksaanRepository struct {
-	mock.Mock
-}
-
-var _ PemeriksaanRepository = (*MockPemeriksaanRepository)(nil)
-
-func (m *MockPemeriksaanRepository) CheckExistingPemeriksaan(antrianID int) error {
-	args := m.Called(antrianID)
-	return args.Error(0)
-}
-func (m *MockPemeriksaanRepository) Create(pemeriksaan model.Pemeriksaan) (model.Pemeriksaan, error) {
-	args := m.Called(pemeriksaan)
-	return args.Get(0).(model.Pemeriksaan), args.Error(1)
-}
-func (m *MockPemeriksaanRepository) GetById(id int) (model.Pemeriksaan, error) {
-	args := m.Called(id)
-	return args.Get(0).(model.Pemeriksaan), args.Error(1)
-}
-func (m *MockPemeriksaanRepository) GetAllByPasienID(pasienID int) ([]model.Pemeriksaan, error) {
-	args := m.Called(pasienID)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]model.Pemeriksaan), args.Error(1)
-}
-func (m *MockPemeriksaanRepository) Update(id int, pemeriksaan model.Pemeriksaan) (model.Pemeriksaan, error) {
-	args := m.Called(id, pemeriksaan)
-	return args.Get(0).(model.Pemeriksaan), args.Error(1)
-}
-func (m *MockPemeriksaanRepository) Delete(id int) error {
-	args := m.Called(id)
-	return args.Error(0)
-}
-
-type MockAntrianRepository struct {
-	mock.Mock
-}
-
-var _ AntrianRepository = (*MockAntrianRepository)(nil)
-
-func (m *MockAntrianRepository) GetByID(id int) (model.Antrian, error) {
-	args := m.Called(id)
-	return args.Get(0).(model.Antrian), args.Error(1)
-}
-func (m *MockAntrianRepository) Update(id int, antrian model.Antrian) (model.Antrian, error) {
-	args := m.Called(id, antrian)
-	return args.Get(0).(model.Antrian), args.Error(1)
-}
-
 func TestPemeriksaanService_CreatePemeriksaan(t *testing.T) {
 	mockPemeriksaanRepo := new(MockPemeriksaanRepository)
 	mockAntrianRepo := new(MockAntrianRepository)

@@ -62,7 +62,7 @@ func (h *AntrianHandler) GetAll(c *gin.Context) {
 		PoliIDFilter:  poliID,
 	}
 
-	responseData, metadata, err := h.Service.GetAllAntrianDetails(c.Request.Context(), params)
+	responseData, metadata, err := h.Service.GetAllAntrian(c.Request.Context(), params)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to retrieve data", err)
 		return

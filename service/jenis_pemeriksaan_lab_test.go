@@ -12,40 +12,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type MockJenisPemeriksaanLabRepository struct {
-	mock.Mock
-}
-
-var _ JenisPemeriksaanLabRepository = (*MockJenisPemeriksaanLabRepository)(nil)
-
-func (m *MockJenisPemeriksaanLabRepository) Create(jenis model.JenisPemeriksaanLab) (model.JenisPemeriksaanLab, error) {
-	args := m.Called(jenis)
-	return args.Get(0).(model.JenisPemeriksaanLab), args.Error(1)
-}
-func (m *MockJenisPemeriksaanLabRepository) GetAll() ([]model.JenisPemeriksaanLab, error) {
-	args := m.Called()
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]model.JenisPemeriksaanLab), args.Error(1)
-}
-func (m *MockJenisPemeriksaanLabRepository) GetById(id int) (model.JenisPemeriksaanLab, error) {
-	args := m.Called(id)
-	return args.Get(0).(model.JenisPemeriksaanLab), args.Error(1)
-}
-func (m *MockJenisPemeriksaanLabRepository) Update(id int, jenis model.JenisPemeriksaanLab) (model.JenisPemeriksaanLab, error) {
-	args := m.Called(id, jenis)
-	return args.Get(0).(model.JenisPemeriksaanLab), args.Error(1)
-}
-func (m *MockJenisPemeriksaanLabRepository) Delete(id int) error {
-	args := m.Called(id)
-	return args.Error(0)
-}
-func (m *MockJenisPemeriksaanLabRepository) FindByName(name string) (model.JenisPemeriksaanLab, error) {
-	args := m.Called(name)
-	return args.Get(0).(model.JenisPemeriksaanLab), args.Error(1)
-}
-
 func TestJenisPemeriksaanLabService_Create(t *testing.T) {
 	mockRepo := new(MockJenisPemeriksaanLabRepository)
 	service := NewJenisPemeriksaanLabService(mockRepo)

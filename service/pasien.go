@@ -17,15 +17,6 @@ var (
 	ErrPasienConflict = errors.New("data with the same NIK, username, or nomor kartu jaminan already exists")
 )
 
-type PasienRepository interface {
-	Create(pasien model.Pasien) (model.Pasien, error)
-	GetAll(params repository.ParamsGetAllPasien) ([]model.Pasien, pagination.Metadata, error)
-	GetById(id int) (model.Pasien, error)
-	Update(id int, pasien model.Pasien) (model.Pasien, error)
-	Delete(id int) error
-	GetLastID() (int, error)
-}
-
 type PasienService struct {
 	repo PasienRepository
 }

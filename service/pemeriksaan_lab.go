@@ -8,14 +8,6 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-type PemeriksaanLabRepository interface {
-	Create(hasilLab model.PemeriksaanLab) (model.PemeriksaanLab, error)
-	GetAllByPemeriksaanID(pemeriksaanID int) ([]model.PemeriksaanLab, error)
-	GetById(id int) (model.PemeriksaanLab, error)
-	Update(id int, hasilLab model.PemeriksaanLab) (model.PemeriksaanLab, error)
-	Delete(id int) error
-}
-
 type PemeriksaanLabService struct {
 	repo PemeriksaanLabRepository
 }

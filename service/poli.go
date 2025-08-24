@@ -14,15 +14,6 @@ var (
 	ErrPoliConflict = errors.New("data with that name already exists")
 )
 
-type PoliRepository interface {
-	Create(poli model.Poli) (model.Poli, error)
-	GetAll() ([]model.Poli, error)
-	GetById(id int) (model.Poli, error)
-	Update(id int, poli model.Poli) (model.Poli, error)
-	Delete(id int) error
-	FindByName(name string) (model.Poli, error)
-}
-
 type PoliService struct {
 	repo PoliRepository
 }

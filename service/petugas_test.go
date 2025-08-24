@@ -15,43 +15,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type MockPetugasRepository struct {
-	mock.Mock
-}
-
-func (m *MockPetugasRepository) Create(petugas model.Petugas) (model.Petugas, error) {
-	args := m.Called(petugas)
-	return args.Get(0).(model.Petugas), args.Error(1)
-}
-
-func (m *MockPetugasRepository) GetByUsername(username string) (model.Petugas, error) {
-	args := m.Called(username)
-	return args.Get(0).(model.Petugas), args.Error(1)
-}
-
-func (m *MockPetugasRepository) GetById(id int) (model.Petugas, error) {
-	args := m.Called(id)
-	return args.Get(0).(model.Petugas), args.Error(1)
-}
-
-func (m *MockPetugasRepository) GetAll(params repository.ParamsGetAllPetugas) ([]model.Petugas, pagination.Metadata, error) {
-	args := m.Called(params)
-	if args.Get(0) == nil {
-		return nil, args.Get(1).(pagination.Metadata), args.Error(2)
-	}
-	return args.Get(0).([]model.Petugas), args.Get(1).(pagination.Metadata), args.Error(2)
-}
-
-func (m *MockPetugasRepository) Update(id int, petugas model.Petugas) (model.Petugas, error) {
-	args := m.Called(id, petugas)
-	return args.Get(0).(model.Petugas), args.Error(1)
-}
-
-func (m *MockPetugasRepository) Delete(id int) error {
-	args := m.Called(id)
-	return args.Error(0)
-}
-
 func TestPetugasService_CreatePetugas(t *testing.T) {
 	cfg := &config.Config{
 		DefaultPetugasPassword: "passworddefault",

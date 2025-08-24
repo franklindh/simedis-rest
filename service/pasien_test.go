@@ -14,49 +14,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type MockPasienRepository struct {
-	mock.Mock
-}
-
-var _ PasienRepository = (*MockPasienRepository)(nil)
-
-func (m *MockPasienRepository) Create(pasien model.Pasien) (model.Pasien, error) {
-	args := m.Called(pasien)
-
-	if retFn, ok := args.Get(0).(func(model.Pasien) model.Pasien); ok {
-		return retFn(pasien), args.Error(1)
-	}
-	return args.Get(0).(model.Pasien), args.Error(1)
-}
-
-func (m *MockPasienRepository) GetAll(params repository.ParamsGetAllPasien) ([]model.Pasien, pagination.Metadata, error) {
-	args := m.Called(params)
-	if args.Get(0) == nil {
-		return nil, args.Get(1).(pagination.Metadata), args.Error(2)
-	}
-	return args.Get(0).([]model.Pasien), args.Get(1).(pagination.Metadata), args.Error(2)
-}
-
-func (m *MockPasienRepository) GetById(id int) (model.Pasien, error) {
-	args := m.Called(id)
-	return args.Get(0).(model.Pasien), args.Error(1)
-}
-
-func (m *MockPasienRepository) Update(id int, pasien model.Pasien) (model.Pasien, error) {
-	args := m.Called(id, pasien)
-	return args.Get(0).(model.Pasien), args.Error(1)
-}
-
-func (m *MockPasienRepository) Delete(id int) error {
-	args := m.Called(id)
-	return args.Error(0)
-}
-
-func (m *MockPasienRepository) GetLastID() (int, error) {
-	args := m.Called()
-	return args.Int(0), args.Error(1)
-}
-
 func TestPasienService_CreatePasien(t *testing.T) {
 	mockRepo := new(MockPasienRepository)
 	service := NewPasienService(mockRepo)

@@ -12,42 +12,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type MockPoliRepository struct {
-	mock.Mock
-}
-
-var _ PoliRepository = (*MockPoliRepository)(nil)
-
-func (m *MockPoliRepository) Create(poli model.Poli) (model.Poli, error) {
-	args := m.Called(poli)
-	return args.Get(0).(model.Poli), args.Error(1)
-}
-
-func (m *MockPoliRepository) GetAll() ([]model.Poli, error) {
-	args := m.Called()
-	return args.Get(0).([]model.Poli), args.Error(1)
-}
-
-func (m *MockPoliRepository) GetById(id int) (model.Poli, error) {
-	args := m.Called(id)
-	return args.Get(0).(model.Poli), args.Error(1)
-}
-
-func (m *MockPoliRepository) Update(id int, poli model.Poli) (model.Poli, error) {
-	args := m.Called(id, poli)
-	return args.Get(0).(model.Poli), args.Error(1)
-}
-
-func (m *MockPoliRepository) Delete(id int) error {
-	args := m.Called(id)
-	return args.Error(0)
-}
-
-func (m *MockPoliRepository) FindByName(name string) (model.Poli, error) {
-	args := m.Called(name)
-	return args.Get(0).(model.Poli), args.Error(1)
-}
-
 func TestPoliService_CreatePoli(t *testing.T) {
 	testCases := []struct {
 		name          string

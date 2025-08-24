@@ -13,36 +13,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type MockJadwalRepository struct {
-	mock.Mock
-}
-
-var _ JadwalRepository = (*MockJadwalRepository)(nil)
-
-func (m *MockJadwalRepository) Create(jadwal model.Jadwal) (model.Jadwal, error) {
-	args := m.Called(jadwal)
-	return args.Get(0).(model.Jadwal), args.Error(1)
-}
-func (m *MockJadwalRepository) GetAll(params repository.ParamsGetAllJadwal) ([]model.Jadwal, pagination.Metadata, error) {
-	args := m.Called(params)
-	if args.Get(0) == nil {
-		return nil, args.Get(1).(pagination.Metadata), args.Error(2)
-	}
-	return args.Get(0).([]model.Jadwal), args.Get(1).(pagination.Metadata), args.Error(2)
-}
-func (m *MockJadwalRepository) GetById(id int) (model.Jadwal, error) {
-	args := m.Called(id)
-	return args.Get(0).(model.Jadwal), args.Error(1)
-}
-func (m *MockJadwalRepository) Update(id int, jadwal model.Jadwal) (model.Jadwal, error) {
-	args := m.Called(id, jadwal)
-	return args.Get(0).(model.Jadwal), args.Error(1)
-}
-func (m *MockJadwalRepository) Delete(id int) error {
-	args := m.Called(id)
-	return args.Error(0)
-}
-
 func TestJadwalService_CreateJadwal(t *testing.T) {
 	t.Run("Success: Create new schedule", func(t *testing.T) {
 		mockRepo := new(MockJadwalRepository)

@@ -14,15 +14,6 @@ var (
 	ErrJenisPemeriksaanConflict = errors.New("jenis pemeriksaan with that name already exists")
 )
 
-type JenisPemeriksaanLabRepository interface {
-	Create(jenis model.JenisPemeriksaanLab) (model.JenisPemeriksaanLab, error)
-	GetAll() ([]model.JenisPemeriksaanLab, error)
-	GetById(id int) (model.JenisPemeriksaanLab, error)
-	Update(id int, jenis model.JenisPemeriksaanLab) (model.JenisPemeriksaanLab, error)
-	Delete(id int) error
-	FindByName(name string) (model.JenisPemeriksaanLab, error)
-}
-
 type JenisPemeriksaanLabService struct {
 	repo JenisPemeriksaanLabRepository
 }
