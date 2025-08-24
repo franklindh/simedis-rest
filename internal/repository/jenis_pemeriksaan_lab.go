@@ -26,7 +26,7 @@ func (r *JenisPemeriksaanLabRepository) GetAll() ([]model.JenisPemeriksaanLab, e
 	return allJenis, result.Error
 }
 
-func (r *JenisPemeriksaanLabRepository) GetByID(id int) (model.JenisPemeriksaanLab, error) {
+func (r *JenisPemeriksaanLabRepository) GetById(id int) (model.JenisPemeriksaanLab, error) {
 	var jenis model.JenisPemeriksaanLab
 	result := r.DB.First(&jenis, id)
 	if result.Error != nil {
@@ -46,7 +46,7 @@ func (r *JenisPemeriksaanLabRepository) Update(id int, jenis model.JenisPemeriks
 	if result.RowsAffected == 0 {
 		return model.JenisPemeriksaanLab{}, ErrNotFound
 	}
-	return r.GetByID(id)
+	return r.GetById(id)
 }
 
 func (r *JenisPemeriksaanLabRepository) Delete(id int) error {
@@ -55,4 +55,16 @@ func (r *JenisPemeriksaanLabRepository) Delete(id int) error {
 		return ErrNotFound
 	}
 	return result.Error
+}
+
+func (r *JenisPemeriksaanLabRepository) FindByName(name string) (model.JenisPemeriksaanLab, error) {
+	var jenis model.JenisPemeriksaanLab
+	result := r.DB.Where("nama_pemeriksaan = ?", name).First(&jenis)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return model.JenisPemeriksaanLab{}, ErrNotFound
+		}
+		return model.JenisPemeriksaanLab{}, result.Error
+	}
+	return jenis, nil
 }

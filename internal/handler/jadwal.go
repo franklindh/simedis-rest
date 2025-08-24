@@ -60,7 +60,7 @@ func (h *JadwalHandler) GetAll(c *gin.Context) {
 		EndDateFilter:   c.Query("end_date"),
 	}
 
-	responseData, metadata, err := h.Service.GetAllJadwalDetails(c.Request.Context(), params)
+	responseData, metadata, err := h.Service.GetAllJadwal(c.Request.Context(), params)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to retrieve data", err)
 		return

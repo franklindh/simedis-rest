@@ -25,7 +25,7 @@ func (r *PoliRepository) GetAll() ([]model.Poli, error) {
 	return poli, result.Error
 }
 
-func (r *PoliRepository) GetByID(id int) (model.Poli, error) {
+func (r *PoliRepository) GetById(id int) (model.Poli, error) {
 
 	var poli model.Poli
 	result := r.DB.First(&poli, id)
@@ -53,7 +53,7 @@ func (r *PoliRepository) Update(id int, poli model.Poli) (model.Poli, error) {
 		return model.Poli{}, ErrNotFound
 	}
 
-	return r.GetByID(id)
+	return r.GetById(id)
 }
 
 func (r *PoliRepository) Delete(id int) error {
@@ -80,19 +80,6 @@ func (r *PoliRepository) FindByNameIncludingDeleted(nama string) (model.Poli, er
 		return model.Poli{}, result.Error
 	}
 	return poli, nil
-}
-
-func (r *PoliRepository) Restore(id int) (model.Poli, error) {
-
-	result := r.DB.Model(&model.Poli{}).Unscoped().Where("id_poli = ?", id).Update("deleted_at", nil)
-	if result.Error != nil {
-		return model.Poli{}, result.Error
-	}
-	if result.RowsAffected == 0 {
-		return model.Poli{}, ErrNotFound
-	}
-
-	return r.GetByID(id)
 }
 
 func (r *PoliRepository) FindByName(name string) (model.Poli, error) {

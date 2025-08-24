@@ -20,17 +20,16 @@ var (
 )
 
 type PetugasService struct {
-	repo   *repository.PetugasRepository
+	repo   PetugasRepository
 	config *config.Config
 }
 
-func NewPetugasService(repo *repository.PetugasRepository, cfg *config.Config) *PetugasService {
+func NewPetugasService(repo PetugasRepository, cfg *config.Config) *PetugasService {
 	return &PetugasService{repo: repo, config: cfg}
 }
 
-func (s *PetugasService) Login(ctx context.Context, username, password string) (string, error) {
-
-	user, err := s.repo.GetByUsername(username)
+func (s *PetugasService) Login(ctx context.Context, req model.LoginPetugasRequest) (string, error) {
+	user, err := s.repo.GetByUsername(req.Username)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
 			return "", ErrInvalidCredentials
@@ -38,7 +37,7 @@ func (s *PetugasService) Login(ctx context.Context, username, password string) (
 		return "", fmt.Errorf("database error: %w", err)
 	}
 
-	err = utils.VerifyPassword(password, user.Password)
+	err = utils.VerifyPassword(req.Password, user.Password)
 	if err != nil {
 		return "", ErrInvalidCredentials
 	}
@@ -48,34 +47,32 @@ func (s *PetugasService) Login(ctx context.Context, username, password string) (
 	if err != nil {
 		return "", fmt.Errorf("failed to generate token: %w", err)
 	}
-
 	return token, nil
 }
 
-func (s *PetugasService) CreatePetugas(ctx context.Context, petugasInput model.Petugas) (model.Petugas, error) {
+func (s *PetugasService) CreatePetugas(ctx context.Context, req model.CreatePetugasRequest) (model.PetugasResponse, error) {
 
-	defaultPassword := s.config.DefaultPetugasPassword
-	encodedHash, err := utils.HashPassword(defaultPassword)
+	petugasInput := req.ToModel()
+
+	hashedPassword, err := utils.HashPassword(s.config.DefaultPetugasPassword)
 	if err != nil {
-		return model.Petugas{}, fmt.Errorf("failed to hash password: %w", err)
+		return model.PetugasResponse{}, fmt.Errorf("failed to hash password: %w", err)
 	}
-	petugasInput.Password = encodedHash
+
+	petugasInput.Password = hashedPassword
 
 	createdPetugas, err := s.repo.Create(petugasInput)
 	if err != nil {
-
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-			return model.Petugas{}, ErrPetugasConflict
+			return model.PetugasResponse{}, ErrPetugasConflict
 		}
-		return model.Petugas{}, fmt.Errorf("failed to create petugas: %w", err)
+		return model.PetugasResponse{}, fmt.Errorf("failed to create petugas: %w", err)
 	}
 
-	createdPetugas.Password = ""
-	return createdPetugas, nil
+	return model.ToPetugasResponse(createdPetugas), nil
 }
 
-func (s *PetugasService) GetAllPetugas(ctx context.Context, params repository.ParamsGetAllPetugas) ([]model.Petugas, pagination.Metadata, error) {
-
+func (s *PetugasService) GetAllPetugas(ctx context.Context, params repository.ParamsGetAllPetugas) ([]model.PetugasResponse, pagination.Metadata, error) {
 	if params.Page <= 0 {
 		params.Page = 1
 	}
@@ -87,24 +84,34 @@ func (s *PetugasService) GetAllPetugas(ctx context.Context, params repository.Pa
 	if err != nil {
 		return nil, pagination.Metadata{}, fmt.Errorf("failed to get all petugas: %w", err)
 	}
-	return allPetugas, metadata, nil
+
+	response := model.ToPetugasResponseList(allPetugas)
+	return response, metadata, nil
 }
 
-func (s *PetugasService) GetPetugasByID(ctx context.Context, id int) (model.Petugas, error) {
-	return s.repo.GetByID(id)
+func (s *PetugasService) GetPetugasByID(ctx context.Context, id int) (model.PetugasResponse, error) {
+	petugas, err := s.repo.GetById(id)
+	if err != nil {
+
+		return model.PetugasResponse{}, err
+	}
+	return model.ToPetugasResponse(petugas), nil
 }
 
-func (s *PetugasService) UpdatePetugas(ctx context.Context, id int, petugasInput model.Petugas) (model.Petugas, error) {
+func (s *PetugasService) UpdatePetugas(ctx context.Context, id int, req model.UpdatePetugasRequest) (model.PetugasResponse, error) {
 
-	petugasInput.Password = ""
-	updatedPetugas, err := s.repo.Update(id, petugasInput)
+	petugasUpdate := req.ToModel()
+
+	updatedPetugas, err := s.repo.Update(id, petugasUpdate)
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-			return model.Petugas{}, ErrPetugasConflict
+			return model.PetugasResponse{}, ErrPetugasConflict
 		}
-		return model.Petugas{}, err
+
+		return model.PetugasResponse{}, err
 	}
-	return updatedPetugas, nil
+
+	return model.ToPetugasResponse(updatedPetugas), nil
 }
 
 func (s *PetugasService) DeletePetugas(ctx context.Context, id int) error {

@@ -33,10 +33,10 @@ func (r *PemeriksaanRepository) Create(pemeriksaan model.Pemeriksaan) (model.Pem
 		return model.Pemeriksaan{}, result.Error
 	}
 
-	return r.GetByID(pemeriksaan.ID)
+	return r.GetById(pemeriksaan.ID)
 }
 
-func (r *PemeriksaanRepository) GetByID(id int) (model.Pemeriksaan, error) {
+func (r *PemeriksaanRepository) GetById(id int) (model.Pemeriksaan, error) {
 	var pemeriksaan model.Pemeriksaan
 	result := r.DB.
 		Preload("Icd").
@@ -77,7 +77,7 @@ func (r *PemeriksaanRepository) Update(id int, pemeriksaan model.Pemeriksaan) (m
 	if result.RowsAffected == 0 {
 		return model.Pemeriksaan{}, ErrNotFound
 	}
-	return r.GetByID(id)
+	return r.GetById(id)
 }
 
 func (r *PemeriksaanRepository) Delete(id int) error {

@@ -29,9 +29,53 @@ type CreateJenisPemeriksaanLabRequest struct {
 	Kriteria        string `json:"kriteria,omitempty"`
 }
 
+func (req *CreateJenisPemeriksaanLabRequest) ToModel() JenisPemeriksaanLab {
+	return JenisPemeriksaanLab{
+		NamaPemeriksaan: req.NamaPemeriksaan,
+		Satuan:          sql.NullString{String: req.Satuan, Valid: req.Satuan != ""},
+		NilaiRujukan:    sql.NullString{String: req.NilaiRujukan, Valid: req.NilaiRujukan != ""},
+		Kriteria:        sql.NullString{String: req.Kriteria, Valid: req.Kriteria != ""},
+	}
+}
+
 type UpdateJenisPemeriksaanLabRequest struct {
 	NamaPemeriksaan string `json:"nama_pemeriksaan" binding:"required,min=3"`
 	Satuan          string `json:"satuan,omitempty"`
 	NilaiRujukan    string `json:"nilai_rujukan,omitempty"`
 	Kriteria        string `json:"kriteria,omitempty"`
+}
+
+func (req *UpdateJenisPemeriksaanLabRequest) ToModel() JenisPemeriksaanLab {
+	return JenisPemeriksaanLab{
+		NamaPemeriksaan: req.NamaPemeriksaan,
+		Satuan:          sql.NullString{String: req.Satuan, Valid: req.Satuan != ""},
+		NilaiRujukan:    sql.NullString{String: req.NilaiRujukan, Valid: req.NilaiRujukan != ""},
+		Kriteria:        sql.NullString{String: req.Kriteria, Valid: req.Kriteria != ""},
+	}
+}
+
+type JenisPemeriksaanLabResponse struct {
+	ID              int    `json:"id"`
+	NamaPemeriksaan string `json:"nama_pemeriksaan"`
+	Satuan          string `json:"satuan,omitempty"`
+	NilaiRujukan    string `json:"nilai_rujukan,omitempty"`
+	Kriteria        string `json:"kriteria,omitempty"`
+}
+
+func ToJenisPemeriksaanLabResponse(jpl JenisPemeriksaanLab) JenisPemeriksaanLabResponse {
+	return JenisPemeriksaanLabResponse{
+		ID:              jpl.ID,
+		NamaPemeriksaan: jpl.NamaPemeriksaan,
+		Satuan:          jpl.Satuan.String,
+		NilaiRujukan:    jpl.NilaiRujukan.String,
+		Kriteria:        jpl.Kriteria.String,
+	}
+}
+
+func ToJenisPemeriksaanLabResponseList(list []JenisPemeriksaanLab) []JenisPemeriksaanLabResponse {
+	var responses []JenisPemeriksaanLabResponse
+	for _, jpl := range list {
+		responses = append(responses, ToJenisPemeriksaanLabResponse(jpl))
+	}
+	return responses
 }

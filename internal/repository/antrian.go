@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"time"
 
 	"github.com/franklindh/simedis-api/internal/model"
 	"github.com/franklindh/simedis-api/pkg/utils/pagination"
@@ -101,7 +102,7 @@ func (r *AntrianRepository) Delete(id int) error {
 	return result.Error
 }
 
-func (r *AntrianRepository) CheckAntrian(pasienID, jadwalID int) error {
+func (r *AntrianRepository) CheckAntrian(pasienID, jadwalID int) (bool, error) {
 	var count int64
 
 	result := r.DB.Model(&model.Antrian{}).
@@ -111,17 +112,17 @@ func (r *AntrianRepository) CheckAntrian(pasienID, jadwalID int) error {
 		Count(&count)
 
 	if result.Error != nil {
-		return result.Error
+		return false, result.Error
 	}
 
 	if count > 0 {
-		return nil
+		return true, nil
 	}
 
-	return ErrNotFound
+	return false, nil
 }
 
-func (r *AntrianRepository) CheckForOverlappingAntrian(pasienID int, tanggal string, waktuMulai string, waktuSelesai string) error {
+func (r *AntrianRepository) CheckForOverlappingAntrian(pasienID int, tanggal time.Time, waktuMulai time.Time, waktuSelesai time.Time) (bool, error) {
 	var count int64
 
 	result := r.DB.Model(&model.Antrian{}).
@@ -134,12 +135,27 @@ func (r *AntrianRepository) CheckForOverlappingAntrian(pasienID int, tanggal str
 		Count(&count)
 
 	if result.Error != nil {
-		return result.Error
+		return false, result.Error
 	}
 
 	if count > 0 {
-		return nil
+		return true, nil
 	}
 
-	return ErrNotFound
+	return false, nil
+}
+
+func (r *AntrianRepository) CountTodayByJadwal(jadwalID int) (int64, error) {
+	var count int64
+
+	result := r.DB.Model(&model.Antrian{}).
+		Where("id_jadwal = ?", jadwalID).
+		Where("CAST(created_at AS DATE) = CURRENT_DATE").
+		Count(&count)
+
+	if result.Error != nil {
+		return 0, result.Error
+	}
+
+	return count, nil
 }

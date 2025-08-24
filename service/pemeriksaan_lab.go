@@ -5,15 +5,14 @@ import (
 	"fmt"
 
 	"github.com/franklindh/simedis-api/internal/model"
-	"github.com/franklindh/simedis-api/internal/repository"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type PemeriksaanLabService struct {
-	repo *repository.PemeriksaanLabRepository
+	repo PemeriksaanLabRepository
 }
 
-func NewPemeriksaanLabService(repo *repository.PemeriksaanLabRepository) *PemeriksaanLabService {
+func NewPemeriksaanLabService(repo PemeriksaanLabRepository) *PemeriksaanLabService {
 	return &PemeriksaanLabService{repo: repo}
 }
 
