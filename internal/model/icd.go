@@ -29,9 +29,53 @@ type CreateIcdRequest struct {
 	Status       string `json:"status" binding:"required,oneof=aktif nonaktif"`
 }
 
+func (req *CreateIcdRequest) ToModel() Icd {
+	return Icd{
+		KodeIcd:      req.KodeIcd,
+		NamaPenyakit: req.NamaPenyakit,
+		Deskripsi:    sql.NullString{String: req.Deskripsi, Valid: req.Deskripsi != ""},
+		Status:       req.Status,
+	}
+}
+
 type UpdateIcdRequest struct {
 	KodeIcd      string `json:"kode_icd" binding:"required"`
 	NamaPenyakit string `json:"nama_penyakit" binding:"required,min=3"`
 	Deskripsi    string `json:"deskripsi,omitempty"`
 	Status       string `json:"status" binding:"required,oneof=aktif nonaktif"`
+}
+
+func (req *UpdateIcdRequest) ToModel() Icd {
+	return Icd{
+		KodeIcd:      req.KodeIcd,
+		NamaPenyakit: req.NamaPenyakit,
+		Deskripsi:    sql.NullString{String: req.Deskripsi, Valid: req.Deskripsi != ""},
+		Status:       req.Status,
+	}
+}
+
+type IcdResponse struct {
+	ID           int    `json:"id"`
+	KodeIcd      string `json:"kode_icd"`
+	NamaPenyakit string `json:"nama_penyakit"`
+	Deskripsi    string `json:"deskripsi,omitempty"`
+	Status       string `json:"status"`
+}
+
+func ToIcdResponse(icd Icd) IcdResponse {
+	return IcdResponse{
+		ID:           icd.ID,
+		KodeIcd:      icd.KodeIcd,
+		NamaPenyakit: icd.NamaPenyakit,
+		Deskripsi:    icd.Deskripsi.String,
+		Status:       icd.Status,
+	}
+}
+
+func ToIcdResponseList(icds []Icd) []IcdResponse {
+	var responses []IcdResponse
+	for _, icd := range icds {
+		responses = append(responses, ToIcdResponse(icd))
+	}
+	return responses
 }
