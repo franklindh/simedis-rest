@@ -15,7 +15,7 @@ type AntrianRepository interface {
 	Update(id int, antrian model.Antrian) (model.Antrian, error)
 	Delete(id int) error
 	CheckAntrian(pasienID, jadwalID int) (bool, error)
-	CheckForOverlappingAntrian(pasienID int, tanggal time.Time, waktuMulai time.Time, waktuSelesai time.Time) (bool, error)
+	CheckForOverlappingAntrian(pasienID int, tanggal, waktuMulai, waktuSelesai time.Time) (bool, error)
 	CountTodayByJadwal(jadwalID int) (int64, error)
 }
 

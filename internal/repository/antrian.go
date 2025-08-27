@@ -10,12 +10,12 @@ import (
 )
 
 type ParamsGetAllAntrian struct {
-	StatusFilter  string
-	TanggalFilter string
-	PoliIDFilter  int
-	SortBy        string
-	Page          int
-	PageSize      int
+	StatusFilter  string `form:"status" binding:"omitempty,sanitize"`
+	TanggalFilter string `form:"tanggal" binding:"omitempty,datetime=2006-01-02"`
+	PoliIDFilter  int    `form:"poli_id" binding:"omitempty,gt=0"`
+	SortBy        string `form:"sort" binding:"omitempty,sanitize"`
+	Page          int    `form:"page" binding:"omitempty,gt=0"`
+	PageSize      int    `form:"pageSize" binding:"omitempty,gt=0"`
 }
 
 type AntrianRepository struct {

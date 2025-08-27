@@ -41,16 +41,21 @@ func (h *PasienHandler) Create(c *gin.Context) {
 }
 
 func (h *PasienHandler) GetAll(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "5"))
+	var params repository.ParamsGetAllPasien
 
-	params := repository.ParamsGetAllPasien{
-		Page:         page,
-		PageSize:     pageSize,
-		SortBy:       c.DefaultQuery("sort", "nama_pasien_asc"),
-		NameFilter:   c.Query("name"),
-		NIKFilter:    c.Query("nik"),
-		NoRekamMedis: c.Query("no_rekam_medis"),
+	if err := c.ShouldBindQuery(&params); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid query parameters", err)
+		return
+	}
+
+	if params.Page == 0 {
+		params.Page = 1
+	}
+	if params.PageSize == 0 {
+		params.PageSize = 5
+	}
+	if params.SortBy == "" {
+		params.SortBy = "created_at_desc"
 	}
 
 	allPasien, metadata, err := h.Service.GetAllPasien(c.Request.Context(), params)

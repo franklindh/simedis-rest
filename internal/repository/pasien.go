@@ -9,12 +9,12 @@ import (
 )
 
 type ParamsGetAllPasien struct {
-	NameFilter   string
-	NIKFilter    string
-	NoRekamMedis string
-	SortBy       string
-	Page         int
-	PageSize     int
+	NameFilter   string `form:"name" binding:"omitempty,sanitize"`
+	NIKFilter    string `form:"nik" binding:"omitempty,numeric"`
+	NoRekamMedis string `form:"no_rekam_medis" binding:"omitempty,sanitize"`
+	SortBy       string `form:"sort" binding:"omitempty,sanitize"`
+	Page         int    `form:"page" binding:"omitempty,gt=0"`
+	PageSize     int    `form:"pageSize" binding:"omitempty,gt=0"`
 }
 
 type PasienRepository struct {

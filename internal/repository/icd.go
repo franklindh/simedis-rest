@@ -9,12 +9,12 @@ import (
 )
 
 type ParamsGetAllIcd struct {
-	KodeFilter   string
-	NamaFilter   string
-	StatusFilter string
-	SortBy       string
-	Page         int
-	PageSize     int
+	KodeFilter   string `form:"kode" binding:"omitempty,sanitize"`
+	NamaFilter   string `form:"nama" binding:"omitempty,sanitize"`
+	StatusFilter string `form:"status" binding:"omitempty,oneof=aktif nonaktif"`
+	SortBy       string `form:"sort" binding:"omitempty,sanitize"`
+	Page         int    `form:"page" binding:"omitempty,gt=0"`
+	PageSize     int    `form:"pageSize" binding:"omitempty,gt=0"`
 }
 
 type IcdRepository struct {

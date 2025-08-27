@@ -1,12 +1,20 @@
 package router
 
 import (
+	"time"
+
 	"github.com/franklindh/simedis-api/internal/config"
 	"github.com/franklindh/simedis-api/internal/handler"
 	"github.com/franklindh/simedis-api/internal/middleware"
 	"github.com/franklindh/simedis-api/internal/repository"
 	"github.com/franklindh/simedis-api/service"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/gzip"
+	"github.com/gin-contrib/secure"
 	"github.com/gin-gonic/gin"
+	"github.com/ulule/limiter/v3"
+	ginmiddleware "github.com/ulule/limiter/v3/drivers/middleware/gin"
+	"github.com/ulule/limiter/v3/drivers/store/memory"
 )
 
 func New(app *config.Application) *gin.Engine {
@@ -54,6 +62,34 @@ func New(app *config.Application) *gin.Engine {
 	pemeriksaanLabRepo := repository.NewPemeriksaanLabRepository(db)
 	pemeriksaanLabService := service.NewPemeriksaanLabService(pemeriksaanLabRepo)
 	pemeriksaanLabHandler := handler.NewPemeriksaanLabHandler(pemeriksaanLabService)
+
+	router.Use(secure.New(secure.Config{
+		STSSeconds:           31536000,
+		STSIncludeSubdomains: true,
+		STSPreload:           true,
+		FrameDeny:            true,
+		ContentTypeNosniff:   true,
+		BrowserXssFilter:     true,
+		// ContentSecurityPolicy: "default-src 'self'",
+		ReferrerPolicy: "no-referrer",
+		IsDevelopment:  false,
+	}))
+
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000", "https://icikiwir.com"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
+	rate := limiter.Rate{Period: 1 * time.Hour, Limit: 100}
+	store := memory.NewStore()
+	limitermiddleware := ginmiddleware.NewMiddleware(limiter.New(store, rate))
+	router.Use(limitermiddleware)
+
+	router.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	// public
 	router.POST("/login/petugas", petugasHandler.Login)

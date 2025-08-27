@@ -8,14 +8,15 @@ import (
 	"gorm.io/gorm"
 )
 
+// JADWAL NANTI GANTI TIPE DATA TANGGALNYA
 type ParamsGetAllJadwal struct {
-	PetugasIDFilter int
-	PoliIDFilter    int
-	StartDateFilter string
-	EndDateFilter   string
-	SortBy          string
-	Page            int
-	PageSize        int
+	PetugasIDFilter int    `form:"petugas_id" binding:"omitempty,gt=0"`
+	PoliIDFilter    int    `form:"poli_id" binding:"omitempty,gt=0"`
+	StartDateFilter string `form:"start_date" binding:"omitempty,datetime=2006-01-02"`
+	EndDateFilter   string `form:"end_date" binding:"omitempty,datetime=2006-01-02"`
+	SortBy          string `form:"sort" binding:"omitempty,sanitize"`
+	Page            int    `form:"page" binding:"omitempty,gt=0"`
+	PageSize        int    `form:"pageSize" binding:"omitempty,gt=0"`
 }
 
 type JadwalRepository struct {

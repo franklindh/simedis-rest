@@ -34,29 +34,29 @@ func (Pemeriksaan) TableName() string {
 type CreatePemeriksaanRequest struct {
 	AntrianID          int    `json:"antrian_id" binding:"required,gt=0"`
 	IcdID              *int   `json:"icd_id,omitempty"`
-	Nadi               string `json:"nadi,omitempty"`
-	TekananDarah       string `json:"tekanan_darah,omitempty"`
-	Suhu               string `json:"suhu,omitempty"`
-	BeratBadan         string `json:"berat_badan,omitempty"`
-	KeadaanUmum        string `json:"keadaan_umum,omitempty"`
-	Keluhan            string `json:"keluhan,omitempty"`
-	RiwayatPenyakit    string `json:"riwayat_penyakit,omitempty"`
-	Keterangan         string `json:"keterangan,omitempty"`
-	Tindakan           string `json:"tindakan,omitempty"`
+	Nadi               string `json:"nadi,omitempty" binding:"sanitize"`
+	TekananDarah       string `json:"tekanan_darah,omitempty" binding:"sanitize"`
+	Suhu               string `json:"suhu,omitempty" binding:"sanitize"`
+	BeratBadan         string `json:"berat_badan,omitempty" binding:"sanitize"`
+	KeadaanUmum        string `json:"keadaan_umum,omitempty" binding:"sanitize"`
+	Keluhan            string `json:"keluhan,omitempty" binding:"sanitize"`
+	RiwayatPenyakit    string `json:"riwayat_penyakit,omitempty" binding:"sanitize"`
+	Keterangan         string `json:"keterangan,omitempty" binding:"sanitize"`
+	Tindakan           string `json:"tindakan,omitempty" binding:"sanitize"`
 	TanggalPemeriksaan string `json:"tanggal_pemeriksaan" binding:"required,datetime=2006-01-02"`
 }
 
 type UpdatePemeriksaanRequest struct {
 	IcdID              *int   `json:"icd_id,omitempty"`
-	Nadi               string `json:"nadi,omitempty"`
-	TekananDarah       string `json:"tekanan_darah,omitempty"`
-	Suhu               string `json:"suhu,omitempty"`
-	BeratBadan         string `json:"berat_badan,omitempty"`
-	KeadaanUmum        string `json:"keadaan_umum,omitempty"`
-	Keluhan            string `json:"keluhan,omitempty"`
-	RiwayatPenyakit    string `json:"riwayat_penyakit,omitempty"`
-	Keterangan         string `json:"keterangan,omitempty"`
-	Tindakan           string `json:"tindakan,omitempty"`
+	Nadi               string `json:"nadi,omitempty" binding:"sanitize"`
+	TekananDarah       string `json:"tekanan_darah,omitempty" binding:"sanitize"`
+	Suhu               string `json:"suhu,omitempty" binding:"sanitize"`
+	BeratBadan         string `json:"berat_badan,omitempty" binding:"sanitize"`
+	KeadaanUmum        string `json:"keadaan_umum,omitempty" binding:"sanitize"`
+	Keluhan            string `json:"keluhan,omitempty" binding:"sanitize"`
+	RiwayatPenyakit    string `json:"riwayat_penyakit,omitempty" binding:"sanitize"`
+	Keterangan         string `json:"keterangan,omitempty" binding:"sanitize"`
+	Tindakan           string `json:"tindakan,omitempty" binding:"sanitize"`
 	TanggalPemeriksaan string `json:"tanggal_pemeriksaan" binding:"required,datetime=2006-01-02"`
 }
 

@@ -24,8 +24,8 @@ func (Icd) TableName() string {
 
 type CreateIcdRequest struct {
 	KodeIcd      string `json:"kode_icd" binding:"required"`
-	NamaPenyakit string `json:"nama_penyakit" binding:"required,min=3"`
-	Deskripsi    string `json:"deskripsi,omitempty"`
+	NamaPenyakit string `json:"nama_penyakit" binding:"required,min=3,sanitize"`
+	Deskripsi    string `json:"deskripsi,omitempty" binding:"sanitize"`
 	Status       string `json:"status" binding:"required,oneof=aktif nonaktif"`
 }
 
@@ -40,8 +40,8 @@ func (req *CreateIcdRequest) ToModel() Icd {
 
 type UpdateIcdRequest struct {
 	KodeIcd      string `json:"kode_icd" binding:"required"`
-	NamaPenyakit string `json:"nama_penyakit" binding:"required,min=3"`
-	Deskripsi    string `json:"deskripsi,omitempty"`
+	NamaPenyakit string `json:"nama_penyakit" binding:"required,min=3,sanitize"`
+	Deskripsi    string `json:"deskripsi,omitempty" binding:"sanitize"`
 	Status       string `json:"status" binding:"required,oneof=aktif nonaktif"`
 }
 

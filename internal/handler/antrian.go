@@ -49,17 +49,21 @@ func (h *AntrianHandler) Create(c *gin.Context) {
 }
 
 func (h *AntrianHandler) GetAll(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "5"))
-	poliID, _ := strconv.Atoi(c.Query("poli_id"))
+	var params repository.ParamsGetAllAntrian
 
-	params := repository.ParamsGetAllAntrian{
-		Page:          page,
-		PageSize:      pageSize,
-		SortBy:        c.DefaultQuery("sort", "created_at_asc"),
-		StatusFilter:  c.Query("status"),
-		TanggalFilter: c.Query("tanggal"),
-		PoliIDFilter:  poliID,
+	if err := c.ShouldBindQuery(&params); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid query parameters", err)
+		return
+	}
+
+	if params.Page == 0 {
+		params.Page = 1
+	}
+	if params.PageSize == 0 {
+		params.PageSize = 5
+	}
+	if params.SortBy == "" {
+		params.SortBy = "created_at_desc"
 	}
 
 	responseData, metadata, err := h.Service.GetAllAntrian(c.Request.Context(), params)

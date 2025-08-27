@@ -45,19 +45,21 @@ func (h *JadwalHandler) Create(c *gin.Context) {
 }
 
 func (h *JadwalHandler) GetAll(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "5"))
-	poliID, _ := strconv.Atoi(c.Query("poli_id"))
-	petugasID, _ := strconv.Atoi(c.Query("petugas_id"))
+	var params repository.ParamsGetAllJadwal
 
-	params := repository.ParamsGetAllJadwal{
-		Page:            page,
-		PageSize:        pageSize,
-		SortBy:          c.DefaultQuery("sort", "tanggal_desc"),
-		PoliIDFilter:    poliID,
-		PetugasIDFilter: petugasID,
-		StartDateFilter: c.Query("start_date"),
-		EndDateFilter:   c.Query("end_date"),
+	if err := c.ShouldBindQuery(&params); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid query parameters", err)
+		return
+	}
+
+	if params.Page == 0 {
+		params.Page = 1
+	}
+	if params.PageSize == 0 {
+		params.PageSize = 5
+	}
+	if params.SortBy == "" {
+		params.SortBy = "created_at_desc"
 	}
 
 	responseData, metadata, err := h.Service.GetAllJadwal(c.Request.Context(), params)

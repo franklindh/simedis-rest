@@ -32,31 +32,31 @@ func (Pasien) TableName() string {
 type CreatePasienRequest struct {
 	NIK                       string `json:"nik" binding:"required,numeric,len=16"`
 	NoKartuJaminan            string `json:"no_kartu_jaminan,omitempty"`
-	UsernamePasien            string `json:"username_pasien,omitempty"`
+	UsernamePasien            string `json:"username_pasien,omitempty" binding:"sanitize"`
 	Password                  string `json:"password,omitempty" binding:"omitempty,min=8"`
 	NoTeleponPasien           string `json:"no_telepon_pasien,omitempty"`
-	NamaPasien                string `json:"nama_pasien" binding:"required"`
-	AlamatPasien              string `json:"alamat_pasien" binding:"required"`
-	TempatLahirPasien         string `json:"tempat_lahir_pasien" binding:"required"`
+	NamaPasien                string `json:"nama_pasien" binding:"required,sanitize"`
+	AlamatPasien              string `json:"alamat_pasien" binding:"required,sanitize"`
+	TempatLahirPasien         string `json:"tempat_lahir_pasien" binding:"required,sanitize"`
 	TanggalLahirPasien        string `json:"tanggal_lahir_pasien" binding:"required,datetime=2006-01-02"`
 	JKPasien                  string `json:"jk_pasien" binding:"required,oneof=L P"`
 	StatusPernikahan          string `json:"status_pernikahan" binding:"required,oneof='Belum Menikah' Menikah 'Cerai Hidup' 'Cerai Mati'"`
-	NamaKeluargaTerdekat      string `json:"nama_keluarga_terdekat,omitempty"`
+	NamaKeluargaTerdekat      string `json:"nama_keluarga_terdekat,omitempty" binding:"sanitize"`
 	NoTeleponKeluargaTerdekat string `json:"no_telepon_keluarga_terdekat,omitempty"`
 }
 
 type UpdatePasienRequest struct {
 	NIK                       string `json:"nik" binding:"required,numeric,len=16"`
 	NoKartuJaminan            string `json:"no_kartu_jaminan,omitempty"`
-	UsernamePasien            string `json:"username_pasien" binding:"required,alphanum,min=5"`
+	UsernamePasien            string `json:"username_pasien,omitempty" binding:"sanitize"`
 	NoTeleponPasien           string `json:"no_telepon_pasien,omitempty"`
-	NamaPasien                string `json:"nama_pasien" binding:"required"`
-	AlamatPasien              string `json:"alamat_pasien" binding:"required"`
-	TempatLahirPasien         string `json:"tempat_lahir_pasien" binding:"required"`
+	NamaPasien                string `json:"nama_pasien" binding:"required,sanitize"`
+	AlamatPasien              string `json:"alamat_pasien" binding:"required,sanitize"`
+	TempatLahirPasien         string `json:"tempat_lahir_pasien" binding:"required,sanitize"`
 	TanggalLahirPasien        string `json:"tanggal_lahir_pasien" binding:"required,datetime=2006-01-02"`
 	JKPasien                  string `json:"jk_pasien" binding:"required,oneof=L P"`
 	StatusPernikahan          string `json:"status_pernikahan" binding:"required,oneof='Belum Menikah' Menikah 'Cerai Hidup' 'Cerai Mati'"`
-	NamaKeluargaTerdekat      string `json:"nama_keluarga_terdekat,omitempty"`
+	NamaKeluargaTerdekat      string `json:"nama_keluarga_terdekat,omitempty" binding:"sanitize"`
 	NoTeleponKeluargaTerdekat string `json:"no_telepon_keluarga_terdekat,omitempty"`
 }
 

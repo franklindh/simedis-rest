@@ -28,14 +28,8 @@ func NewJadwalService(repo JadwalRepository) *JadwalService {
 func (s *JadwalService) CreateJadwal(ctx context.Context, req model.JadwalRequest) (model.JadwalResponse, error) {
 
 	layout := "15:04"
-	startTime, err := time.Parse(layout, req.WaktuMulai)
-	if err != nil {
-		return model.JadwalResponse{}, errors.New("invalid format for waktu_mulai")
-	}
-	endTime, err := time.Parse(layout, req.WaktuSelesai)
-	if err != nil {
-		return model.JadwalResponse{}, errors.New("invalid format for waktu_selesai")
-	}
+	startTime, _ := time.Parse(layout, req.WaktuMulai)
+	endTime, _ := time.Parse(layout, req.WaktuSelesai)
 
 	if !endTime.After(startTime) {
 		return model.JadwalResponse{}, ErrWaktuSelesaiInvalid
@@ -78,24 +72,23 @@ func (s *JadwalService) GetJadwalByID(ctx context.Context, id int) (model.Jadwal
 func (s *JadwalService) UpdateJadwal(ctx context.Context, id int, req model.JadwalRequest) (model.JadwalResponse, error) {
 
 	layout := "15:04"
-	startTime, err := time.Parse(layout, req.WaktuMulai)
-	if err != nil {
-		return model.JadwalResponse{}, errors.New("invalid format for waktu_mulai")
-	}
-	endTime, err := time.Parse(layout, req.WaktuSelesai)
-	if err != nil {
-		return model.JadwalResponse{}, errors.New("invalid format for waktu_selesai")
-	}
+	startTime, _ := time.Parse(layout, req.WaktuMulai)
+	endTime, _ := time.Parse(layout, req.WaktuSelesai)
 	if !endTime.After(startTime) {
 		return model.JadwalResponse{}, ErrWaktuSelesaiInvalid
 	}
 
 	jadwalUpdate := req.ToModel()
-	updatedJadwal, err := s.repo.Update(id, jadwalUpdate)
+	_, err := s.repo.Update(id, jadwalUpdate)
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
 			return model.JadwalResponse{}, ErrJadwalConflict
 		}
+		return model.JadwalResponse{}, err
+	}
+
+	updatedJadwal, err := s.repo.GetById(id)
+	if err != nil {
 		return model.JadwalResponse{}, err
 	}
 

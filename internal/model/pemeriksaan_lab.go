@@ -18,7 +18,7 @@ func (PemeriksaanLab) TableName() string {
 
 type CreateHasilLabRequest struct {
 	JenisPemeriksaanID int    `json:"jenis_pemeriksaan_id" binding:"required,gt=0"`
-	Hasil              string `json:"hasil" binding:"required"`
+	Hasil              string `json:"hasil" binding:"required,sanitize"`
 }
 
 func (req *CreateHasilLabRequest) ToModel(pemeriksaanID int) PemeriksaanLab {
@@ -30,7 +30,7 @@ func (req *CreateHasilLabRequest) ToModel(pemeriksaanID int) PemeriksaanLab {
 }
 
 type UpdateHasilLabRequest struct {
-	Hasil string `json:"hasil" binding:"required"`
+	Hasil string `json:"hasil" binding:"required,sanitize"`
 }
 
 func (req *UpdateHasilLabRequest) ToModel() PemeriksaanLab {

@@ -3,11 +3,14 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 
 	"github.com/franklindh/simedis-api/internal/model"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	"github.com/microcosm-cc/bluemonday"
 )
 
 func FormatValidationError(err error) string {
@@ -54,4 +57,32 @@ func ValidatePetugasUsername(petugas model.CreatePetugasRequest) error {
 	}
 
 	return nil
+}
+
+// validator buat sanitize
+func RegisterSanitizeValidator() {
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+
+		v.RegisterValidation("sanitize", SanitizeString)
+	}
+}
+
+func SanitizeString(fl validator.FieldLevel) bool {
+
+	field := fl.Field()
+
+	if field.Kind() == reflect.String {
+
+		str := field.String()
+
+		sanitizedStr := bluemonday.UGCPolicy().Sanitize(str)
+
+		trimmedStr := strings.TrimSpace(sanitizedStr)
+
+		if field.CanSet() {
+			field.SetString(trimmedStr)
+		}
+	}
+
+	return true
 }

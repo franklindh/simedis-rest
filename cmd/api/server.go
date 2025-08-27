@@ -6,6 +6,7 @@ import (
 
 	"github.com/franklindh/simedis-api/internal/config"
 	"github.com/franklindh/simedis-api/internal/router"
+	"github.com/franklindh/simedis-api/pkg/utils"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -19,6 +20,8 @@ func main() {
 	if err != nil {
 		logger.Fatalf("could not load config: %v", err)
 	}
+
+	utils.RegisterSanitizeValidator()
 
 	db, err := gorm.Open(postgres.Open(cfg.DSN), &gorm.Config{})
 	if err != nil {

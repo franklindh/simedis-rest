@@ -32,22 +32,22 @@ type PetugasResponse struct {
 }
 
 type CreatePetugasRequest struct {
-	Username string `json:"username" binding:"required,min=5,max=20,alphanum"`
-	Nama     string `json:"nama" binding:"required,min=3,max=50"`
+	Username string `json:"username" binding:"required,min=5,max=20,alphanum,sanitize"`
+	Nama     string `json:"nama" binding:"required,min=3,max=50,sanitize"`
 	Status   string `json:"status" binding:"required,oneof=aktif nonaktif"`
 	Role     string `json:"role" binding:"required,oneof=Administrasi Poliklinik Dokter Lab"`
 	PoliID   *int64 `json:"poli_id,omitempty"`
 }
 
 type UpdatePetugasRequest struct {
-	Nama   string `json:"nama" binding:"required,min=3,max=50"`
+	Nama   string `json:"nama" binding:"required,min=3,max=50,sanitize"`
 	Status string `json:"status" binding:"required,oneof=aktif nonaktif"`
 	Role   string `json:"role" binding:"required,oneof=Administrasi Poliklinik Dokter Lab"`
 	PoliID *int64 `json:"poli_id,omitempty"`
 }
 
 type LoginPetugasRequest struct {
-	Username string `json:"username" binding:"required"`
+	Username string `json:"username" binding:"required,sanitize"`
 	Password string `json:"password" binding:"required"`
 }
 

@@ -23,10 +23,10 @@ func (JenisPemeriksaanLab) TableName() string {
 }
 
 type CreateJenisPemeriksaanLabRequest struct {
-	NamaPemeriksaan string `json:"nama_pemeriksaan" binding:"required,min=3"`
-	Satuan          string `json:"satuan,omitempty"`
-	NilaiRujukan    string `json:"nilai_rujukan,omitempty"`
-	Kriteria        string `json:"kriteria,omitempty"`
+	NamaPemeriksaan string `json:"nama_pemeriksaan" binding:"required,min=3,sanitize"`
+	Satuan          string `json:"satuan,omitempty" binding:"sanitize"`
+	NilaiRujukan    string `json:"nilai_rujukan,omitempty" binding:"sanitize"`
+	Kriteria        string `json:"kriteria,omitempty" binding:"sanitize"`
 }
 
 func (req *CreateJenisPemeriksaanLabRequest) ToModel() JenisPemeriksaanLab {
@@ -39,10 +39,10 @@ func (req *CreateJenisPemeriksaanLabRequest) ToModel() JenisPemeriksaanLab {
 }
 
 type UpdateJenisPemeriksaanLabRequest struct {
-	NamaPemeriksaan string `json:"nama_pemeriksaan" binding:"required,min=3"`
-	Satuan          string `json:"satuan,omitempty"`
-	NilaiRujukan    string `json:"nilai_rujukan,omitempty"`
-	Kriteria        string `json:"kriteria,omitempty"`
+	NamaPemeriksaan string `json:"nama_pemeriksaan" binding:"required,min=3,sanitize"`
+	Satuan          string `json:"satuan,omitempty" binding:"sanitize"`
+	NilaiRujukan    string `json:"nilai_rujukan,omitempty" binding:"sanitize"`
+	Kriteria        string `json:"kriteria,omitempty" binding:"sanitize"`
 }
 
 func (req *UpdateJenisPemeriksaanLabRequest) ToModel() JenisPemeriksaanLab {

@@ -41,16 +41,21 @@ func (h *IcdHandler) Create(c *gin.Context) {
 }
 
 func (h *IcdHandler) GetAll(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "5"))
+	var params repository.ParamsGetAllIcd
 
-	params := repository.ParamsGetAllIcd{
-		Page:         page,
-		PageSize:     pageSize,
-		SortBy:       c.DefaultQuery("sort", "kode_asc"),
-		KodeFilter:   c.Query("kode"),
-		NamaFilter:   c.Query("nama"),
-		StatusFilter: c.Query("status"),
+	if err := c.ShouldBindQuery(&params); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid query parameters", err)
+		return
+	}
+
+	if params.Page == 0 {
+		params.Page = 1
+	}
+	if params.PageSize == 0 {
+		params.PageSize = 5
+	}
+	if params.SortBy == "" {
+		params.SortBy = "created_at_desc"
 	}
 
 	allIcd, metadata, err := h.Service.GetAllIcd(c.Request.Context(), params)

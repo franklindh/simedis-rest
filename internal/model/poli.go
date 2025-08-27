@@ -20,12 +20,12 @@ func (Poli) TableName() string {
 }
 
 type CreatePoliRequest struct {
-	Name   string `json:"name" binding:"required,min=3,max=50"`
+	Name   string `json:"name" binding:"required,min=3,max=50,sanitize"`
 	Status string `json:"status" binding:"required,oneof=aktif nonaktif"`
 }
 
 type UpdatePoliRequest struct {
-	Name   string `json:"name" binding:"required,min=3,max=50"`
+	Name   string `json:"name" binding:"required,min=3,max=50,sanitize"`
 	Status string `json:"status" binding:"required,oneof=aktif nonaktif"`
 }
 

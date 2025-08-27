@@ -12,7 +12,7 @@ type Jadwal struct {
 	PetugasID    int            `json:"petugas_id" gorm:"column:id_petugas"`
 	PoliID       int            `json:"poli_id" gorm:"column:id_poli"`
 	Tanggal      time.Time      `json:"tanggal" gorm:"column:tanggal_praktik"`
-	WaktuMulai   time.Time      `json:"waktu_mulai" gorm:"column:waktu_mulai"`
+	WaktuMulai   time.Time      `json:"waktu_mulai" gorm:"column:waktu_mulai" db:"waktu_mulai"`
 	WaktuSelesai time.Time      `json:"waktu_selesai" gorm:"column:waktu_selesai"`
 	Keterangan   sql.NullString `json:"keterangan" gorm:"column:keterangan"`
 	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index;column:deleted_at"`
@@ -30,13 +30,15 @@ type JadwalRequest struct {
 	Tanggal      string `json:"tanggal" binding:"required,datetime=2006-01-02"`
 	WaktuMulai   string `json:"waktu_mulai" binding:"required,datetime=15:04"`
 	WaktuSelesai string `json:"waktu_selesai" binding:"required,datetime=15:04"`
-	Keterangan   string `json:"keterangan,omitempty"`
+	Keterangan   string `json:"keterangan,omitempty" binding:"sanitize"`
 }
 
 func (req *JadwalRequest) ToModel() Jadwal {
+
 	parsedTanggal, _ := time.Parse("2006-01-02", req.Tanggal)
 	parsedMulai, _ := time.Parse("15:04", req.WaktuMulai)
 	parsedSelesai, _ := time.Parse("15:04", req.WaktuSelesai)
+
 	return Jadwal{
 		PetugasID:    req.PetugasID,
 		PoliID:       req.PoliID,
