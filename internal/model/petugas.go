@@ -51,6 +51,12 @@ type LoginPetugasRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type ChangePasswordRequest struct {
+	OldPassword     string `json:"old_password" binding:"required"`
+	NewPassword     string `json:"new_password" binding:"required,min=8"`
+	ConfirmPassword string `json:"confirm_password" binding:"required,eqfield=NewPassword"`
+}
+
 func (req *CreatePetugasRequest) ToModel() Petugas {
 	petugas := Petugas{
 		Username: req.Username,

@@ -265,6 +265,11 @@ func (m *MockPetugasRepository) Delete(id int) error {
 	return args.Error(0)
 }
 
+func (m *MockPetugasRepository) UpdatePassword(id int, newHashedPassword string) error {
+	args := m.Called(id, newHashedPassword)
+	return args.Error(0)
+}
+
 type MockPoliRepository struct {
 	mock.Mock
 }

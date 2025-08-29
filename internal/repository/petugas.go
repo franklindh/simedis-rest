@@ -9,7 +9,7 @@ import (
 )
 
 type ParamsGetAllPetugas struct {
-	NameOrUsernameFilter string `form:"search" binding:"omitempty,sanitize"` // memang search
+	NameOrUsernameFilter string `form:"search" binding:"omitempty,sanitize"`
 	RoleFilter           string `form:"role" binding:"omitempty,oneof=Administrasi Poliklinik Dokter Lab"`
 	StatusFilter         string `form:"status" binding:"omitempty,oneof=aktif nonaktif"`
 	SortBy               string `form:"sort" binding:"omitempty,sanitize"`
@@ -117,5 +117,20 @@ func (r *petugasRepository) Delete(id int) error {
 	if result.RowsAffected == 0 {
 		return ErrNotFound
 	}
+	return nil
+}
+
+func (r *petugasRepository) UpdatePassword(id int, newHashedPassword string) error {
+
+	result := r.DB.Model(&model.Petugas{}).Where("id_petugas = ?", id).Update("password", newHashedPassword)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return ErrNotFound
+	}
+
 	return nil
 }

@@ -69,6 +69,7 @@ type PetugasRepository interface {
 	GetById(id int) (model.Petugas, error)
 	Update(id int, petugas model.Petugas) (model.Petugas, error)
 	Delete(id int) error
+	UpdatePassword(id int, newHashedPassword string) error
 }
 
 type PoliRepository interface {

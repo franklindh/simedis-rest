@@ -169,3 +169,33 @@ func (h *PetugasHandler) Login(c *gin.Context) {
 		"token":   token,
 	})
 }
+
+func (h *PetugasHandler) ChangePassword(c *gin.Context) {
+
+	userID, exists := c.Get("userID")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "User ID not found in token", nil)
+		return
+	}
+
+	petugasID, ok := userID.(int)
+	if !ok {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Invalid user ID format in token", nil)
+		return
+	}
+
+	var req model.ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, utils.FormatValidationError(err), err)
+		return
+	}
+
+	err := h.Service.ChangePassword(c.Request.Context(), petugasID, req)
+	if err != nil {
+
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error(), err)
+		return
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, nil, "Password changed successfully")
+}

@@ -234,3 +234,63 @@ func TestPetugasService_DeletePetugas(t *testing.T) {
 		mockRepo.AssertExpectations(t)
 	})
 }
+
+func TestPetugasService_ChangePassword(t *testing.T) {
+
+	petugasID := 1
+	oldPassword := "passwordLama123"
+	hashedOldPassword, _ := utils.HashPassword(oldPassword)
+
+	req := model.ChangePasswordRequest{
+		OldPassword:     oldPassword,
+		NewPassword:     "passwordBaru456",
+		ConfirmPassword: "passwordBaru456",
+	}
+
+	t.Run("Success: Change password successfully", func(t *testing.T) {
+
+		mockRepo := new(MockPetugasRepository)
+		cfg := &config.Config{}
+		service := NewPetugasService(mockRepo, cfg)
+
+		mockPetugas := model.Petugas{ID: petugasID, Password: hashedOldPassword}
+		mockRepo.On("GetById", petugasID).Return(mockPetugas, nil).Once()
+		mockRepo.On("UpdatePassword", petugasID, mock.AnythingOfType("string")).Return(nil).Once()
+
+		err := service.ChangePassword(context.Background(), petugasID, req)
+
+		assert.NoError(t, err)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("Fail: Old password does not match", func(t *testing.T) {
+
+		mockRepo := new(MockPetugasRepository)
+		cfg := &config.Config{}
+		service := NewPetugasService(mockRepo, cfg)
+
+		mockPetugas := model.Petugas{ID: petugasID, Password: "hash_yang_berbeda"}
+		mockRepo.On("GetById", petugasID).Return(mockPetugas, nil).Once()
+
+		err := service.ChangePassword(context.Background(), petugasID, req)
+
+		assert.Error(t, err)
+		assert.True(t, errors.Is(err, ErrOldPasswordMismatch))
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("Fail: User not found", func(t *testing.T) {
+
+		mockRepo := new(MockPetugasRepository)
+		cfg := &config.Config{}
+		service := NewPetugasService(mockRepo, cfg)
+
+		mockRepo.On("GetById", petugasID).Return(model.Petugas{}, repository.ErrNotFound).Once()
+
+		err := service.ChangePassword(context.Background(), petugasID, req)
+
+		assert.Error(t, err)
+		assert.True(t, errors.Is(err, repository.ErrNotFound))
+		mockRepo.AssertExpectations(t)
+	})
+}

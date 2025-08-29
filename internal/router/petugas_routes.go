@@ -11,6 +11,7 @@ func PetugasRoutes(rg *gin.RouterGroup, h *handler.PetugasHandler) {
 	{
 		petugasRoutes.GET("", h.GetAll)
 		petugasRoutes.GET("/:id", h.GetByID)
+		petugasRoutes.PUT("/change-password", h.ChangePassword)
 
 		user := petugasRoutes.Group("")
 		user.Use(middleware.Authorize("Administrasi"))

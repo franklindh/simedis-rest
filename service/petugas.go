@@ -15,8 +15,9 @@ import (
 )
 
 var (
-	ErrPetugasConflict    = errors.New("username already exists")
-	ErrInvalidCredentials = errors.New("invalid username or password")
+	ErrPetugasConflict     = errors.New("username already exists")
+	ErrInvalidCredentials  = errors.New("invalid username or password")
+	ErrOldPasswordMismatch = errors.New("old password does not match")
 )
 
 type PetugasService struct {
@@ -116,4 +117,20 @@ func (s *PetugasService) UpdatePetugas(ctx context.Context, id int, req model.Up
 
 func (s *PetugasService) DeletePetugas(ctx context.Context, id int) error {
 	return s.repo.Delete(id)
+}
+
+func (s *PetugasService) ChangePassword(ctx context.Context, id int, req model.ChangePasswordRequest) error {
+
+	petugas, err := s.repo.GetById(id)
+	if err != nil {
+		return err
+	}
+
+	err = utils.VerifyPassword(req.OldPassword, petugas.Password)
+	if err != nil {
+		return ErrOldPasswordMismatch
+	}
+
+	newHashedPassword, _ := utils.HashPassword(req.NewPassword)
+	return s.repo.UpdatePassword(id, newHashedPassword)
 }

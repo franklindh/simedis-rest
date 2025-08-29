@@ -125,12 +125,20 @@ func TestJadwalService_UpdateJadwal(t *testing.T) {
 	t.Run("Success: Update jadwal", func(t *testing.T) {
 		updatedModel := req.ToModel()
 		updatedModel.ID = 1
+
+		fullModel := updatedModel
+		fullModel.Petugas = model.Petugas{ID: 1, Nama: "Dr. Budi Updated"}
+		fullModel.Poli = model.Poli{ID: 1, Nama: "Poli Umum Updated"}
+
 		mockRepo.On("Update", 1, mock.AnythingOfType("model.Jadwal")).Return(updatedModel, nil).Once()
+
+		mockRepo.On("GetById", 1).Return(fullModel, nil).Once()
 
 		result, err := service.UpdateJadwal(context.Background(), 1, req)
 
 		assert.NoError(t, err)
 		assert.Equal(t, 1, result.ID)
+		assert.Equal(t, "Dr. Budi Updated", result.Petugas.Nama)
 		mockRepo.AssertExpectations(t)
 	})
 }
